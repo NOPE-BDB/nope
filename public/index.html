@@ -1419,19 +1419,7 @@
             html += `
             </div>
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-                <button onclick="document.getElementById('uploadFormContainer').style.display='block'; this.style.display='none'" class="submit-btn" style="width: 100%;">上传新游戏</button>
-                <div id="uploadFormContainer" style="display: none; margin-top: 15px;">
-                    <h4 style="color: #4dd0e1; margin-bottom: 15px;">填写游戏信息</h4>
-                    <form onsubmit="submitNewGameFromManage(event)">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <input type="text" id="manageGameName" placeholder="游戏名称" required style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff;">
-                            <input type="text" id="manageGameTags" placeholder="标签（逗号分隔）" style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff;">
-                        </div>
-                        <textarea id="manageGameDesc" placeholder="游戏描述" required style="width: 100%; margin-top: 10px; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; min-height: 60px;"></textarea>
-                        <input type="text" id="manageGameUrl" placeholder="游戏文件URL" required style="width: 100%; margin-top: 10px; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff;">
-                        <button type="submit" class="submit-btn" style="margin-top: 10px; width: 100%;">提交上传</button>
-                    </form>
-                </div>
+                <button onclick="openUploadGamePage()" class="submit-btn" style="width: 100%;">上传新游戏</button>
             </div>
             </div></div></div>`;
             
@@ -1608,6 +1596,87 @@
         function closeGameManageModal() {
             const modal = document.getElementById('gameManageModal');
             if (modal) modal.remove();
+        }
+
+        function openUploadGamePage() {
+            closeGameManageModal();
+            
+            const html = `
+            <div class="modal" id="uploadGameModal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center;">
+                <div class="modal-content" style="background: rgba(30, 40, 50, 0.98); border-radius: 20px; padding: 40px; max-width: 600px; width: 90%;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                        <h3 style="color: #fff; margin: 0;">上传新游戏</h3>
+                        <span onclick="closeUploadGameModal()" style="cursor: pointer; font-size: 1.5rem; color: #b0bec5;">&times;</span>
+                    </div>
+                    <form onsubmit="submitNewGameUpload(event)">
+                        <div class="form-group">
+                            <label>游戏名称 *</label>
+                            <input type="text" id="uploadGameName" placeholder="输入游戏名称" required>
+                        </div>
+                        <div class="form-group">
+                            <label>游戏描述 *</label>
+                            <textarea id="uploadGameDesc" rows="3" placeholder="简单描述你的游戏" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>游戏图标（emoji）</label>
+                            <input type="text" id="uploadGameIcon" placeholder="如：🐟" maxlength="2" style="width: 80px;">
+                        </div>
+                        <div class="form-group">
+                            <label>标签（逗号分隔）</label>
+                            <input type="text" id="uploadGameTags" placeholder="如：休闲,冒险,闯关">
+                        </div>
+                        <div class="form-group">
+                            <label>游戏文件URL *</label>
+                            <input type="url" id="uploadGameUrl" placeholder="https://example.com/game.html" required>
+                            <p style="color: #888; font-size: 0.8rem; margin-top: 5px;">支持 HTML 文件的直接链接</p>
+                        </div>
+                        <button type="submit" class="submit-btn" style="width: 100%; margin-top: 20px;">提交审核</button>
+                    </form>
+                </div>
+            </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function closeUploadGameModal() {
+            const modal = document.getElementById('uploadGameModal');
+            if (modal) modal.remove();
+        }
+
+        function submitNewGameUpload(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            
+            const name = document.getElementById('uploadGameName').value.trim();
+            const desc = document.getElementById('uploadGameDesc').value.trim();
+            const icon = document.getElementById('uploadGameIcon').value.trim() || '🎮';
+            const tagsStr = document.getElementById('uploadGameTags').value.trim();
+            const url = document.getElementById('uploadGameUrl').value.trim();
+            
+            const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()) : [];
+            
+            const newGame = {
+                id: 'game-' + Date.now(),
+                name: name,
+                description: desc,
+                url: url,
+                icon: icon,
+                tags: tags,
+                author: currentUser.username,
+                authorId: currentUser.id,
+                status: 'pending',
+                createdAt: new Date().toISOString(),
+                plays: 0,
+                comments: []
+            };
+            
+            const pending = getPendingGames();
+            pending.push(newGame);
+            savePendingGames(pending);
+            
+            closeUploadGameModal();
+            showNotification('游戏已提交审核，等待管理员通过', 'success');
         }
 
         function submitNewGameFromManage(e) {
