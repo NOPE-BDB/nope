@@ -1144,29 +1144,29 @@
             const serverGames = await fetchGamesFromServer();
             
             if (!serverGames) {
-                if (!localStorage.getItem('games')) {
+                const localGames = getGames();
+                if (localGames.length === 0) {
                     localStorage.setItem('games', JSON.stringify(defaultGames));
                 } else {
-                    const games = getGames();
-                    games.forEach((game, index) => {
+                    localGames.forEach((game, index) => {
                         if (!game.status) {
-                            games[index].status = 'approved';
+                            localGames[index].status = 'approved';
                         }
                     });
                     
-                    const defaultGameIndex = games.findIndex(g => g.id === 'default-1');
+                    const defaultGameIndex = localGames.findIndex(g => g.id === 'default-1');
                     if (defaultGameIndex === -1) {
-                        games.push(defaultGames[0]);
+                        localGames.push(defaultGames[0]);
                     } else {
-                        const existingComments = games[defaultGameIndex].comments || [];
-                        const existingPlays = games[defaultGameIndex].plays || 0;
-                        games[defaultGameIndex] = { 
+                        const existingComments = localGames[defaultGameIndex].comments || [];
+                        const existingPlays = localGames[defaultGameIndex].plays || 0;
+                        localGames[defaultGameIndex] = { 
                             ...defaultGames[0], 
                             comments: existingComments, 
                             plays: existingPlays 
                         };
                     }
-                    saveGames(games);
+                    saveGames(localGames);
                 }
             }
             if (!localStorage.getItem('users')) {
