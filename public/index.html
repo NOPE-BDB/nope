@@ -1264,12 +1264,14 @@
             document.getElementById('userArea').style.display = 'flex';
             document.getElementById('displayUsername').textContent = currentUser.username;
             
+            const adminTab = document.getElementById('adminTab');
+            const adminModeBtn = document.getElementById('adminModeBtn');
             if (isAdmin) {
-                document.getElementById('adminTab').style.display = 'block';
-                document.getElementById('adminModeBtn').style.display = 'flex';
+                if (adminTab) adminTab.style.display = 'block';
+                if (adminModeBtn) adminModeBtn.style.display = 'flex';
             } else {
-                document.getElementById('adminTab').style.display = 'none';
-                document.getElementById('adminModeBtn').style.display = 'none';
+                if (adminTab) adminTab.style.display = 'none';
+                if (adminModeBtn) adminModeBtn.style.display = 'none';
             }
             
             updateUnreadBadge();
