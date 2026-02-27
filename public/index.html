@@ -1366,6 +1366,9 @@
         function showGameManageModal() {
             if (!currentUser) return;
             
+            console.log('showGameManageModal - isAdmin:', isAdmin);
+            console.log('showGameManageModal - currentUser:', currentUser);
+            
             const allGames = getGames();
             const games = isAdmin ? allGames : allGames.filter(g => g.authorId === currentUser.id);
             const pendingEdits = JSON.parse(localStorage.getItem('pendingEdits') || '[]');
