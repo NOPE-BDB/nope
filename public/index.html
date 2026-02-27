@@ -2156,14 +2156,15 @@
 
         function renderGames() {
             const games = getGames();
+            const approvedGames = games.filter(g => !g.status || g.status === 'approved');
             const grid = document.getElementById('gamesGrid');
             
-            if (games.length === 0) {
+            if (approvedGames.length === 0) {
                 grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎮</div><p>暂无游戏</p></div>`;
                 return;
             }
 
-            grid.innerHTML = games.map(game => {
+            grid.innerHTML = approvedGames.map(game => {
                 const isOwner = currentUser && game.authorId === currentUser.id;
                 const showUpdateBtn = isOwner;
                 const coverHtml = game.cover 
