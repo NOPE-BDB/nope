@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大鱼吃小鱼</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #87CEEB;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            background-color: #f5f5dc;
+            border: 2px solid #333;
+            overflow: hidden;
+        }
+        #game-canvas {
+            background-color: rgba(245, 245, 220, 0.8);
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            z-index: 100;
+        }
+        
+        /* 菜单样式 */
+        #main-menu, #mode-select, #history-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 200;
+        }
+        
+        /* 游戏内唤出的菜单 */
+        #pause-menu, #game-over, #game-win {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 200;
+        }
+        
+        #main-menu h1 {
+            margin-top: 0;
+            font-size: 48px;
+            margin-bottom: 40px;
+        }
+        
+        #mode-select h2, #history-menu h2, #pause-menu h2, #game-over h2, #game-win h2 {
+            margin-top: 0;
+            font-size: 32px;
+            margin-bottom: 30px;
+        }
+        
+        /* 垂直排列按钮 */
+        #main-menu button, #mode-select button, #history-menu button, #pause-menu button, #game-over button, #game-win button, #single-mode-menu button, #two-mode-menu button {
+            display: block;
+            margin: 10px auto;
+            width: 200px;
+        }
+        
+        #game-ui {
+            display: none;
+        }
+        
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 200;
+            display: none;
+        }
+        
+        #game-over h2 {
+            margin-top: 0;
+        }
+        
+        #game-win {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 128, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 200;
+            display: none;
+        }
+        
+        #game-win h2 {
+            margin-top: 0;
+            font-size: 36px;
+        }
+        
+        /* 按钮样式 */
+        button {
+            margin: 10px;
+            padding: 12px 24px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        #score-list {
+            margin: 20px 0;
+            font-size: 20px;
+        }
+        
+        #score-list p {
+            margin: 10px 0;
+        }
+        
+        #enable-sound {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        
+        #enable-sound:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- 主菜单 -->
+        <div id="main-menu">
+            <h1>大鱼吃小鱼</h1>
+            <button id="start-game-btn">开始游戏</button>
+            <button id="exit-btn">退出游戏</button>
+        </div>
+        
+        <!-- 游戏模式选择 -->
+        <div id="mode-select" style="display: none;">
+            <h2>选择游戏模式</h2>
+            <button id="single-player-btn">单人游戏</button>
+            <button id="two-player-btn">双人游戏</button>
+            <button id="back-to-menu-btn">返回菜单</button>
+        </div>
+        
+        <!-- 单人模式子菜单 -->
+        <div id="single-mode-menu" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.8); color: white; padding: 30px; border-radius: 10px; text-align: center; z-index: 200;">
+            <h2>单人游戏</h2>
+            <button id="start-single-btn">开始游戏</button>
+            <button id="single-history-btn-menu">成绩记录</button>
+            <button id="back-from-single-btn">返回</button>
+        </div>
+        
+        <!-- 双人模式子菜单 -->
+        <div id="two-mode-menu" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.8); color: white; padding: 30px; border-radius: 10px; text-align: center; z-index: 200;">
+            <h2>双人游戏</h2>
+            <button id="start-two-btn">开始游戏</button>
+            <button id="two-history-btn-menu">成绩记录</button>
+            <button id="back-from-two-btn">返回</button>
+        </div>
+        
+        <!-- 成绩记录 -->
+        <div id="history-menu" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.8); color: white; padding: 30px; border-radius: 10px; text-align: center; z-index: 200;">
+            <h2>成绩记录</h2>
+            <div id="score-list">
+                <p>1. 0分</p>
+                <p>2. 0分</p>
+                <p>3. 0分</p>
+                <p>4. 0分</p>
+                <p>5. 0分</p>
+                <p>6. 0分</p>
+                <p>7. 0分</p>
+                <p>8. 0分</p>
+                <p>9. 0分</p>
+                <p>10. 0分</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid white;">
+                <p>上次游玩成绩: <span id="last-score">0</span>分</p>
+            </div>
+            <button id="back-from-history-btn">返回</button>
+        </div>
+        
+        <!-- 游戏界面 -->
+        <div id="game-ui">
+            <div id="score">分数: 0</div>
+            <canvas id="game-canvas" width="800" height="600"></canvas>
+        </div>
+        
+        <!-- 游戏结束 -->
+        <div id="game-over">
+            <h2>游戏结束!</h2>
+            <p>最终得分: <span id="final-score">0</span></p>
+            <p>本次排名: <span id="final-rank">0</span></p>
+            <button id="restart-btn">重新开始</button>
+            <button id="back-to-menu-from-gameover-btn">返回菜单</button>
+        </div>
+        
+        <!-- 游戏胜利 -->
+        <div id="game-win">
+            <h2>恭喜你获胜了!</h2>
+            <p>最终得分: <span id="win-score">0</span></p>
+            <p>本次排名: <span id="win-rank">0</span></p>
+            <button id="restart-btn">再玩一次</button>
+            <button id="back-to-menu-from-win-btn">返回菜单</button>
+        </div>
+        
+        <!-- 暂停菜单 -->
+        <div id="pause-menu" style="display: none;">
+            <h2>游戏暂停</h2>
+            <button id="continue-btn">继续游戏</button>
+            <button id="restart-from-pause-btn">重新开始</button>
+            <button id="back-to-menu-from-pause-btn">返回菜单</button>
+        </div>
+    </div>
+
+    <button id="enable-sound">启用音效</button>
+    
+    <!-- 背景音乐 -->
+    <audio id="background-music" loop>
+        <source src="《海洋深处的静谧乐章》灿烂的摇滚.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // 游戏变量
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const gameOverElement = document.getElementById('game-over');
+        const gameWinElement = document.getElementById('game-win');
+        const restartBtn = document.getElementById('restart-btn');
+        const enableSoundBtn = document.getElementById('enable-sound');
+        
+        // 鱼的图片
+        let fishSpriteSheet = null;
+        let fishImagesLoaded = false;
+        
+        // 加载鱼的图片
+        function loadFishImages() {
+            fishSpriteSheet = new Image();
+            fishSpriteSheet.crossOrigin = 'anonymous';
+            fishSpriteSheet.src = 'https://user-images.githubusercontent.com/1234567890123456789/fishes.png';
+            fishSpriteSheet.onload = function() {
+                fishImagesLoaded = true;
+                console.log('鱼图片加载成功');
+            };
+            fishSpriteSheet.onerror = function() {
+                console.error('鱼图片加载失败');
+            };
+        }
+        
+        // 开始加载图片
+        loadFishImages();
+        
+        // 键盘事件处理
+        let escPressCount = 0;
+        let escPressTimer = null;
+        
+        document.addEventListener('keydown', function(e) {
+            const key = e.key.toLowerCase();
+            
+            // 空格键暂停/继续游戏
+            if (key === ' ') {
+                if (gameState === 'playing') {
+                    // 暂停游戏
+                    isPaused = true;
+                    gameState = 'paused';
+                    pauseMenu.style.display = 'block';
+                    if (backgroundMusic) {
+                        backgroundMusic.pause();
+                    }
+                } else if (gameState === 'paused') {
+                    // 继续游戏
+                    isPaused = false;
+                    gameState = 'playing';
+                    pauseMenu.style.display = 'none';
+                    if (soundEnabled && backgroundMusic) {
+                        backgroundMusic.play().catch(e => {
+                            console.log('背景音乐播放失败:', e);
+                        });
+                    }
+                }
+            }
+            
+            // R键重新开始游戏
+            if (key === 'r') {
+                if (gameState === 'paused') {
+                    restartFromPauseBtn.click();
+                } else if (gameState === 'game-over' || gameState === 'game-win') {
+                    restartBtn.click();
+                }
+            }
+            
+            // 连续按两次Esc键退出游戏
+            if (key === 'escape') {
+                escPressCount++;
+                
+                if (escPressCount === 1) {
+                    // 第一次按Esc键，启动计时器
+                    escPressTimer = setTimeout(function() {
+                        escPressCount = 0;
+                    }, 1000); // 1秒内按两次才有效
+                } else if (escPressCount === 2) {
+                    // 第二次按Esc键，退出游戏
+                    clearTimeout(escPressTimer);
+                    window.close();
+                }
+            }
+        });
+        
+        // 菜单元素
+        const mainMenu = document.getElementById('main-menu');
+        const modeSelect = document.getElementById('mode-select');
+        const historyMenu = document.getElementById('history-menu');
+        const pauseMenu = document.getElementById('pause-menu');
+        const gameUI = document.getElementById('game-ui');
+        const finalScoreElement = document.getElementById('final-score');
+        const finalRankElement = document.getElementById('final-rank');
+        const winScoreElement = document.getElementById('win-score');
+        const winRankElement = document.getElementById('win-rank');
+        const lastScoreElement = document.getElementById('last-score');
+        const scoreList = document.getElementById('score-list');
+        
+        // 按钮元素
+        const startGameBtn = document.getElementById('start-game-btn');
+        const exitBtn = document.getElementById('exit-btn');
+        const singlePlayerBtn = document.getElementById('single-player-btn');
+        const twoPlayerBtn = document.getElementById('two-player-btn');
+        const backToMenuBtn = document.getElementById('back-to-menu-btn');
+        const backFromHistoryBtn = document.getElementById('back-from-history-btn');
+        const backToMenuFromGameoverBtn = document.getElementById('back-to-menu-from-gameover-btn');
+        const backToMenuFromWinBtn = document.getElementById('back-to-menu-from-win-btn');
+        const continueBtn = document.getElementById('continue-btn');
+        const restartFromPauseBtn = document.getElementById('restart-from-pause-btn');
+        const backToMenuFromPauseBtn = document.getElementById('back-to-menu-from-pause-btn');
+        
+        // 背景音乐变量
+        let backgroundMusic;
+
+        // 音效系统
+        let audioContext;
+        let soundEnabled = false;
+        
+        // 游戏状态
+        let gameState = 'menu'; // menu, mode-select, playing, paused, game-over, game-win
+        let gameMode = 'single'; // single, two
+        let currentHistoryMode = 'single'; // single, two
+        let highScores = {
+            single: JSON.parse(localStorage.getItem('fishGameHighScoresSingle')) || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            two: JSON.parse(localStorage.getItem('fishGameHighScoresTwo')) || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        };
+        let lastScores = {
+            single: parseInt(localStorage.getItem('fishGameLastScoreSingle')) || 0,
+            two: parseInt(localStorage.getItem('fishGameLastScoreTwo')) || 0
+        };
+        let isPaused = false;
+
+        // 初始化音频
+        function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        // 播放碰撞音效
+        function playCollisionSound() {
+            if (!soundEnabled || !audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.05, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        // 播放游戏结束音效
+        function playGameOverSound() {
+            if (!soundEnabled || !audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(500, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.5);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.05, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        // 播放游戏胜利音效
+        function playGameWinSound() {
+            if (!soundEnabled || !audioContext) return;
+            
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            
+            notes.forEach((frequency, index) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime + index * 0.15);
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + index * 0.15);
+                gainNode.gain.exponentialRampToValueAtTime(0.05, audioContext.currentTime + index * 0.15 + 0.1);
+                
+                oscillator.start(audioContext.currentTime + index * 0.15);
+                oscillator.stop(audioContext.currentTime + index * 0.15 + 0.1);
+            });
+        }
+
+        // 播放背景音乐
+        function playBackgroundMusic() {
+            backgroundMusic = document.getElementById('background-music');
+            backgroundMusic.volume = 0.6;
+            backgroundMusic.play().catch(e => {
+                console.log('背景音乐播放失败:', e);
+            });
+        }
+
+        // 音效启用按钮
+        enableSoundBtn.addEventListener('click', function() {
+            if (!audioContext) {
+                initAudio();
+            }
+            
+            soundEnabled = !soundEnabled;
+            
+            if (soundEnabled) {
+                // 播放测试音效
+                playCollisionSound();
+                
+                // 播放背景音乐
+                playBackgroundMusic();
+                
+                enableSoundBtn.textContent = '关闭音乐';
+                enableSoundBtn.style.backgroundColor = '#45a049';
+            } else {
+                // 停止背景音乐
+                if (backgroundMusic) {
+                    backgroundMusic.pause();
+                }
+                
+                enableSoundBtn.textContent = '开启音乐';
+                enableSoundBtn.style.backgroundColor = '#f44336';
+            }
+        });
+        
+        // 菜单导航
+        startGameBtn.addEventListener('click', function() {
+            mainMenu.style.display = 'none';
+            modeSelect.style.display = 'block';
+            gameState = 'mode-select';
+        });
+        
+        exitBtn.addEventListener('click', function() {
+            window.close();
+        });
+        
+        singlePlayerBtn.addEventListener('click', function() {
+            modeSelect.style.display = 'none';
+            document.getElementById('single-mode-menu').style.display = 'block';
+            gameState = 'single-mode';
+        });
+        
+        twoPlayerBtn.addEventListener('click', function() {
+            modeSelect.style.display = 'none';
+            document.getElementById('two-mode-menu').style.display = 'block';
+            gameState = 'two-mode';
+        });
+        
+        // 单人模式子菜单
+        document.getElementById('start-single-btn').addEventListener('click', function() {
+            gameMode = 'single';
+            startGame();
+        });
+        
+        document.getElementById('single-history-btn-menu').addEventListener('click', function() {
+            currentHistoryMode = 'single';
+            updateScoreList();
+            document.getElementById('single-mode-menu').style.display = 'none';
+            historyMenu.style.display = 'block';
+            gameState = 'history';
+        });
+        
+        document.getElementById('back-from-single-btn').addEventListener('click', function() {
+            document.getElementById('single-mode-menu').style.display = 'none';
+            modeSelect.style.display = 'block';
+            gameState = 'mode-select';
+        });
+        
+        // 双人模式子菜单
+        document.getElementById('start-two-btn').addEventListener('click', function() {
+            gameMode = 'two';
+            startGame();
+        });
+        
+        document.getElementById('two-history-btn-menu').addEventListener('click', function() {
+            currentHistoryMode = 'two';
+            updateScoreList();
+            document.getElementById('two-mode-menu').style.display = 'none';
+            historyMenu.style.display = 'block';
+            gameState = 'history';
+        });
+        
+        document.getElementById('back-from-two-btn').addEventListener('click', function() {
+            document.getElementById('two-mode-menu').style.display = 'none';
+            modeSelect.style.display = 'block';
+            gameState = 'mode-select';
+        });
+        
+        backToMenuBtn.addEventListener('click', function() {
+            modeSelect.style.display = 'none';
+            mainMenu.style.display = 'block';
+            gameState = 'menu';
+        });
+        
+        backFromHistoryBtn.addEventListener('click', function() {
+            historyMenu.style.display = 'none';
+            if (currentHistoryMode === 'single') {
+                document.getElementById('single-mode-menu').style.display = 'block';
+                gameState = 'single-mode';
+            } else {
+                document.getElementById('two-mode-menu').style.display = 'block';
+                gameState = 'two-mode';
+            }
+        });
+        
+
+        
+        backToMenuFromGameoverBtn.addEventListener('click', function() {
+            gameOverElement.style.display = 'none';
+            modeSelect.style.display = 'block';
+            gameState = 'mode-select';
+        });
+        
+        backToMenuFromWinBtn.addEventListener('click', function() {
+            gameWinElement.style.display = 'none';
+            modeSelect.style.display = 'block';
+            gameState = 'mode-select';
+        });
+        
+        continueBtn.addEventListener('click', function() {
+            pauseMenu.style.display = 'none';
+            isPaused = false;
+            gameState = 'playing';
+            
+            // 继续游戏时重新播放音乐
+            if (soundEnabled && backgroundMusic) {
+                backgroundMusic.play().catch(e => {
+                    console.log('背景音乐播放失败:', e);
+                });
+            }
+        });
+        
+        restartFromPauseBtn.addEventListener('click', function() {
+            pauseMenu.style.display = 'none';
+            init();
+            isPaused = false;
+            gameState = 'playing';
+            
+            // 重新开始游戏时播放背景音乐
+            if (soundEnabled) {
+                playBackgroundMusic();
+            }
+        });
+        
+        backToMenuFromPauseBtn.addEventListener('click', function() {
+            pauseMenu.style.display = 'none';
+            gameUI.style.display = 'none';
+            mainMenu.style.display = 'block';
+            gameState = 'menu';
+        });
+        
+        // 开始游戏
+        function startGame() {
+            modeSelect.style.display = 'none';
+            document.getElementById('single-mode-menu').style.display = 'none';
+            document.getElementById('two-mode-menu').style.display = 'none';
+            gameUI.style.display = 'block';
+            init();
+            gameState = 'playing';
+            
+            // 游戏开始时自动启用音乐
+            if (!audioContext) {
+                initAudio();
+            }
+            soundEnabled = true;
+            playBackgroundMusic();
+            enableSoundBtn.textContent = '关闭音乐';
+            enableSoundBtn.style.backgroundColor = '#45a049';
+        }
+        
+        // 更新分数列表
+        function updateScoreList() {
+            const scores = highScores[currentHistoryMode];
+            scores.sort((a, b) => b - a);
+            let html = '';
+            for (let i = 0; i < 10; i++) {
+                html += `<p>${i + 1}. ${scores[i]}分</p>`;
+            }
+            scoreList.innerHTML = html;
+            // 更新上次游玩成绩
+            lastScoreElement.textContent = lastScores[currentHistoryMode];
+        }
+        
+        // 保存高分并返回排名
+        function saveHighScore(score) {
+            const scores = highScores[gameMode];
+            
+            // 保存上次游玩成绩
+            lastScores[gameMode] = score;
+            localStorage.setItem(`fishGameLastScore${gameMode === 'single' ? 'Single' : 'Two'}`, score.toString());
+            
+            // 先计算排名（在添加新分数之前）
+            let rank = 1;
+            for (let i = 0; i < scores.length; i++) {
+                if (score < scores[i]) {
+                    rank++;
+                }
+            }
+            
+            // 添加新分数并排序
+            scores.push(score);
+            scores.sort((a, b) => b - a);
+            scores.splice(10); // 只保留前10名
+            localStorage.setItem(`fishGameHighScores${gameMode === 'single' ? 'Single' : 'Two'}`, JSON.stringify(scores));
+            updateScoreList();
+            
+            // 返回排名（如果超过10名则返回"未上榜"）
+            return rank <= 10 ? `第${rank}名` : '未上榜';
+        }
+
+        // 鱼饵类
+        class Bait {
+            constructor() {
+                this.x = Math.random() * (canvas.width - 20) + 10;
+                this.y = -20;
+                this.size = 8; // 减小体积
+                this.speed = 2;
+                this.value = 666;
+                this.opacity = 1;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                
+                // 绘制不规则圆形墨滴效果
+                ctx.fillStyle = '#333';
+                ctx.beginPath();
+                // 绘制不规则圆形
+                for (let i = 0; i < Math.PI * 2; i += 0.1) {
+                    const radius = this.size + Math.random() * 2 - 1; // 随机半径变化
+                    const x = this.x + Math.cos(i) * radius;
+                    const y = this.y + Math.sin(i) * radius;
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.closePath();
+                ctx.fill();
+                
+                // 绘制墨滴的尾巴
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y + this.size);
+                ctx.lineTo(this.x - this.size / 2, this.y + this.size * 1.5);
+                ctx.lineTo(this.x, this.y + this.size * 1.2);
+                ctx.lineTo(this.x + this.size / 2, this.y + this.size * 1.5);
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.restore();
+            }
+
+            update() {
+                this.y += this.speed;
+                this.opacity = Math.max(0.3, 1 - (this.y / canvas.height));
+            }
+
+            isOffScreen() {
+                return this.y > canvas.height + this.size;
+            }
+        }
+
+        // 鱼的类
+        class Fish {
+            constructor(x, y, size, color, speed, isPlayer = false) {
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                this.color = this.getInkColor(); // 使用水墨风格颜色
+                this.speed = speed;
+                this.isPlayer = isPlayer;
+                this.direction = Math.random() > 0.5 ? 1 : -1;
+                this.fishType = Math.floor(Math.random() * 5); // 5种不同的鱼类型
+            }
+
+            // 获取鱼的颜色
+            getInkColor() {
+                const colors = [
+                    'rgb(180, 50, 50)',   // 红色
+                    'rgb(218, 165, 32)',   // 金色
+                    'rgb(30, 30, 30)',     // 黑色
+                    'rgb(139, 90, 43)'     // 棕色
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            draw() {
+                ctx.save();
+                if (this.direction === -1) {
+                    ctx.translate(this.x + this.size, this.y);
+                    ctx.scale(-1, 1);
+                    ctx.translate(-(this.x), -this.y);
+                }
+
+                if (fishImagesLoaded && fishSpriteSheet) {
+                    ctx.drawImage(
+                        fishSpriteSheet,
+                        this.x, this.y,
+                        this.size, this.size / 2
+                    );
+                } else {
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 2;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    
+                    switch (this.fishType) {
+                        case 0:
+                            this.drawFishType1();
+                            break;
+                        case 1:
+                            this.drawFishType2();
+                            break;
+                        case 2:
+                            this.drawFishType3();
+                            break;
+                        case 3:
+                            this.drawFishType4();
+                            break;
+                        case 4:
+                            this.drawFishType5();
+                            break;
+                    }
+                }
+
+                ctx.restore();
+            }
+
+            // 绘制第一种鱼（条纹鱼）
+            drawFishType1() {
+                // 绘制身体
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                // 不规则的身体形状，模拟水墨效果
+                ctx.moveTo(this.x, this.y + this.size / 4);
+                ctx.quadraticCurveTo(this.x + this.size / 4 + Math.random() * 5, this.y - Math.random() * 5, this.x + this.size, this.y + this.size / 4);
+                ctx.quadraticCurveTo(this.x + this.size / 4 - Math.random() * 5, this.y + this.size / 2 + Math.random() * 5, this.x, this.y + this.size / 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制条纹
+                ctx.strokeStyle = '#333';
+                const stripeCount = 5;
+                for (let i = 1; i < stripeCount; i++) {
+                    const stripeX = this.x + (this.size / stripeCount) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(stripeX, this.y + this.size / 6 + Math.random() * 3);
+                    ctx.lineTo(stripeX, this.y + this.size * 5 / 12 - Math.random() * 3);
+                    ctx.stroke();
+                }
+
+                // 绘制尾巴
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y + this.size / 4);
+                ctx.lineTo(this.x - this.size / 4, this.y + this.size / 8 - Math.random() * 5);
+                ctx.lineTo(this.x - this.size / 3, this.y + this.size / 4);
+                ctx.lineTo(this.x - this.size / 4, this.y + this.size * 3 / 8 + Math.random() * 5);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制鱼鳍
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.size / 3, this.y + this.size / 4);
+                ctx.lineTo(this.x + this.size / 2, this.y - this.size / 8 - Math.random() * 3);
+                ctx.lineTo(this.x + this.size * 2 / 3, this.y + this.size / 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制鱼眼
+                this.drawEye();
+            }
+
+            // 绘制第二种鱼（点状鱼）
+            drawFishType2() {
+                // 绘制身体
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y + this.size / 4);
+                ctx.quadraticCurveTo(this.x + this.size / 4 + Math.random() * 5, this.y - Math.random() * 5, this.x + this.size, this.y + this.size / 4);
+                ctx.quadraticCurveTo(this.x + this.size / 4 - Math.random() * 5, this.y + this.size / 2 + Math.random() * 5, this.x, this.y + this.size / 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制斑点
+                ctx.fillStyle = '#333';
+                const dotCount = 8;
+                for (let i = 0; i < dotCount; i++) {
+                    const dotX = this.x + this.size / 4 + Math.random() * this.size / 2;
+                    const dotY = this.y + this.size / 6 + Math.random() * this.size / 3;
+                    const dotSize = this.size / 15 + Math.random() * 2;
+                    ctx.beginPath();
+                    ctx.arc(dotX, dotY, dotSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // 绘制尾巴
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y + this.size / 4);
+                ctx.lineTo(this.x - this.size / 4, this.y - Math.random() * 5);
+                ctx.lineTo(this.x - this.size / 3, this.y + this.size / 4);
+                ctx.lineTo(this.x - this.size / 4, this.y + this.size / 2 + Math.random() * 5);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制鱼鳍
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.size / 3, this.y + this.size / 4);
+                ctx.lineTo(this.x + this.size / 2, this.y - this.size / 8 - Math.random() * 3);
+                ctx.lineTo(this.x + this.size * 2 / 3, this.y + this.size / 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制鱼眼
+                this.drawEye();
+            }
+
+            // 绘制第三种鱼（波浪纹鱼）
+            drawFishType3() {
+                // 绘制身体
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y + this.size / 4);
+                ctx.quadraticCurveTo(this.x + this.size / 4 + Math.random() * 5, this.y - Math.random() * 5, this.x + this.size, this.y + this.size / 4);
+                ctx.quadraticCurveTo(this.x + this.size / 4 - Math.random() * 5, this.y + this.size / 2 + Math.random() * 5, this.x, this.y + this.size / 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制波浪纹
+                ctx.strokeStyle = '#333';
+                ctx.beginPath();
+                for (let i = 0; i < this.size; i += 5) {
+                    const waveX = this.x + i;
+                    const waveY = this.y + this.size / 4 + Math.sin(i * 0.1) * this.size / 10 + Math.random() * 2;
+                    if (i === 0) {
+                        ctx.moveTo(waveX, waveY);
+                    } else {
+                        ctx.lineTo(waveX, waveY);
+                    }
+                }
+                ctx.stroke();
+
+                // 绘制尾巴
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y + this.size / 4);
+                ctx.lineTo(this.x - this.size / 4, this.y + this.size / 8 - Math.random() * 5);
+                ctx.lineTo(this.x - this.size / 2, this.y + this.size / 4);
+                ctx.lineTo(this.x - this.size / 4, this.y + this.size * 3 / 8 + Math.random() * 5);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制鱼鳍
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.size / 3, this.y + this.size / 4);
+                ctx.lineTo(this.x + this.size / 2, this.y - this.size / 8 - Math.random() * 3);
+                ctx.lineTo(this.x + this.size * 2 / 3, this.y + this.size / 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制鱼眼
+                this.drawEye();
+            }
+
+            // 绘制第四种鱼（锯齿尾鱼）
+            drawFishType4() {
+                // 绘制身体
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y + this.size / 4);
+                ctx.quadraticCurveTo(this.x + this.size / 4 + Math.random() * 5, this.y - Math.random() * 5, this.x + this.size, this.y + this.size / 4);
+                ctx.quadraticCurveTo(this.x + this.size / 4 - Math.random() * 5, this.y + this.size / 2 + Math.random() * 5, this.x, this.y + this.size / 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制锯齿尾巴
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y + this.size / 4);
+                ctx.lineTo(this.x - this.size / 4, this.y + this.size / 8 - Math.random() * 3);
+                ctx.lineTo(this.x - this.size / 3, this.y + this.size / 4);
+                ctx.lineTo(this.x - this.size / 4, this.y + this.size * 3 / 8 + Math.random() * 3);
+                ctx.lineTo(this.x - this.size / 5, this.y + this.size / 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制鱼鳍
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.size / 3, this.y + this.size / 4);
+                ctx.lineTo(this.x + this.size / 2, this.y - this.size / 8 - Math.random() * 3);
+                ctx.lineTo(this.x + this.size * 2 / 3, this.y + this.size / 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制鱼眼
+                this.drawEye();
+            }
+
+            // 绘制第五种鱼（圆尾鱼）
+            drawFishType5() {
+                // 绘制身体
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y + this.size / 4);
+                ctx.quadraticCurveTo(this.x + this.size / 4 + Math.random() * 5, this.y - Math.random() * 5, this.x + this.size, this.y + this.size / 4);
+                ctx.quadraticCurveTo(this.x + this.size / 4 - Math.random() * 5, this.y + this.size / 2 + Math.random() * 5, this.x, this.y + this.size / 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制圆尾巴
+                ctx.beginPath();
+                ctx.arc(this.x - this.size / 4, this.y + this.size / 4, this.size / 4 + Math.random() * 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制鱼鳍
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.size / 3, this.y + this.size / 4);
+                ctx.lineTo(this.x + this.size / 2, this.y - this.size / 8 - Math.random() * 3);
+                ctx.lineTo(this.x + this.size * 2 / 3, this.y + this.size / 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 绘制鱼眼
+                this.drawEye();
+            }
+
+            // 绘制鱼眼
+            drawEye() {
+                // 白色眼白
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(this.x + this.size * 3 / 4, this.y + this.size / 4, this.size / 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // 黑色眼珠
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(this.x + this.size * 3 / 4 + this.size / 30, this.y + this.size / 4, this.size / 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            update() {
+                if (!this.isPlayer) {
+                    this.x += this.speed * this.direction;
+                    if (this.x < -this.size) {
+                        this.x = canvas.width;
+                        this.y = Math.random() * (canvas.height - this.size / 2);
+                    } else if (this.x > canvas.width) {
+                        this.x = -this.size;
+                        this.y = Math.random() * (canvas.height - this.size / 2);
+                    }
+                } else {
+                    // 检查是玩家1还是玩家2
+                    const isPlayer1 = this === player1;
+                    const reversed = isPlayer1 ? directionReversed1 : directionReversed2;
+                    
+                    if (isPlayer1) {
+                        // 玩家1使用WASD键
+                        if (reversed) {
+                            // 方向反转
+                            if (keys['w'] && this.y < canvas.height - this.size / 2) {
+                                this.y += this.speed;
+                            }
+                            if (keys['s'] && this.y > 0) {
+                                this.y -= this.speed;
+                            }
+                            if (keys['a'] && this.x < canvas.width - this.size) {
+                                this.x += this.speed;
+                                this.direction = 1;
+                            }
+                            if (keys['d'] && this.x > 0) {
+                                this.x -= this.speed;
+                                this.direction = -1;
+                            }
+                        } else {
+                            // 正常方向
+                            if (keys['w'] && this.y > 0) {
+                                this.y -= this.speed;
+                            }
+                            if (keys['s'] && this.y < canvas.height - this.size / 2) {
+                                this.y += this.speed;
+                            }
+                            if (keys['a'] && this.x > 0) {
+                                this.x -= this.speed;
+                                this.direction = -1;
+                            }
+                            if (keys['d'] && this.x < canvas.width - this.size) {
+                                this.x += this.speed;
+                                this.direction = 1;
+                            }
+                        }
+                    } else {
+                        // 玩家2使用方向键
+                        if (reversed) {
+                            // 方向反转
+                            if (keys['ArrowUp'] && this.y < canvas.height - this.size / 2) {
+                                this.y += this.speed;
+                            }
+                            if (keys['ArrowDown'] && this.y > 0) {
+                                this.y -= this.speed;
+                            }
+                            if (keys['ArrowLeft'] && this.x < canvas.width - this.size) {
+                                this.x += this.speed;
+                                this.direction = 1;
+                            }
+                            if (keys['ArrowRight'] && this.x > 0) {
+                                this.x -= this.speed;
+                                this.direction = -1;
+                            }
+                        } else {
+                            // 正常方向
+                            if (keys['ArrowUp'] && this.y > 0) {
+                                this.y -= this.speed;
+                            }
+                            if (keys['ArrowDown'] && this.y < canvas.height - this.size / 2) {
+                                this.y += this.speed;
+                            }
+                            if (keys['ArrowLeft'] && this.x > 0) {
+                                this.x -= this.speed;
+                                this.direction = -1;
+                            }
+                            if (keys['ArrowRight'] && this.x < canvas.width - this.size) {
+                                this.x += this.speed;
+                                this.direction = 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            checkCollision(otherFish) {
+                // 计算两个鱼中心之间的距离
+                const center1 = { x: this.x + this.size / 2, y: this.y + this.size / 4 };
+                const center2 = { x: otherFish.x + otherFish.size / 2, y: otherFish.y + otherFish.size / 4 };
+                const dx = center1.x - center2.x;
+                const dy = center1.y - center2.y;
+                
+                // 使用椭圆碰撞检测，更精确地匹配鱼的实际身体形状
+                // 鱼身体是椭圆，长轴为size/2，短轴为size/4
+                const a1 = this.size * 0.52; // 长轴半径，减小到52%
+                const b1 = this.size * 0.27; // 短轴半径，减小到27%
+                const a2 = otherFish.size * 0.52;
+                const b2 = otherFish.size * 0.27;
+                
+                // 椭圆碰撞检测公式
+                const normalizedX = dx / (a1 + a2);
+                const normalizedY = dy / (b1 + b2);
+                const distance = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
+                
+                // 检查是否碰撞到尾巴区域
+                // 计算尾巴位置和大小
+                const tail1X = this.direction === 1 ? this.x - this.size / 4 : this.x + this.size + this.size / 4;
+                const tail1Y = this.y + this.size / 4;
+                const tail1Size = this.size / 4;
+                
+                const tail2X = otherFish.direction === 1 ? otherFish.x - otherFish.size / 4 : otherFish.x + otherFish.size + otherFish.size / 4;
+                const tail2Y = otherFish.y + otherFish.size / 4;
+                const tail2Size = otherFish.size / 4;
+                
+                // 检查尾巴碰撞
+                const tailDx = tail1X - tail2X;
+                const tailDy = tail1Y - tail2Y;
+                const tailDistance = Math.sqrt(tailDx * tailDx + tailDy * tailDy);
+                
+                if (tailDistance < (tail1Size + tail2Size) * 0.7) {
+                    return true;
+                }
+                
+                return distance < 1;
+            }
+        }
+
+        let player1;
+        let player2;
+        let fishes = [];
+        let baits = [];
+        let score = 0;
+        let gameOver = false;
+        let gameWin = false;
+        let keys = {};
+        let fishSpawnTimer = 0;
+        let baitSpawnTimer = 0;
+        let directionReversed1 = false;
+        let directionReversed2 = false;
+        let isInvincible1 = false;
+        let isInvincible2 = false;
+        let invincibleTimer1 = 0;
+        let invincibleTimer2 = 0;
+        let player1Alive = true;
+        let player2Alive = true;
+
+        // 初始化游戏
+        function init() {
+            // 根据游戏模式创建玩家
+            if (gameMode === 'single') {
+                player1 = new Fish(canvas.width / 2, canvas.height / 2, 50, '#00ff66', 3, true);
+                player2 = null;
+                player1Alive = true;
+                player2Alive = false;
+                isInvincible1 = true;
+                isInvincible2 = false;
+            } else {
+                player1 = new Fish(canvas.width / 3, canvas.height / 2, 50, '#00ff66', 3, true);
+                player2 = new Fish(canvas.width * 2 / 3, canvas.height / 2, 50, '#ff6600', 3, true);
+                player1Alive = true;
+                player2Alive = true;
+                isInvincible1 = true;
+                isInvincible2 = true;
+            }
+            
+            fishes = [];
+            baits = [];
+            score = 0;
+            gameOver = false;
+            gameWin = false;
+            fishSpawnTimer = 0;
+            baitSpawnTimer = 0;
+            directionReversed1 = false;
+            directionReversed2 = false;
+            invincibleTimer1 = 0;
+            invincibleTimer2 = 0;
+            gameOverElement.style.display = 'none';
+            gameWinElement.style.display = 'none';
+            scoreElement.textContent = `分数: ${score}`;
+
+            // 生成初始鱼群
+            for (let i = 0; i < 10; i++) {
+                const size = Math.random() * 60 + 20;
+                const x = i % 2 === 0 ? Math.random() * canvas.width : (Math.random() > 0.5 ? -size : canvas.width);
+                const y = Math.random() * (canvas.height - size / 2);
+                const speed = Math.random() * 2 + 1;
+                const direction = x < 0 ? 1 : (x > canvas.width ? -1 : (Math.random() > 0.5 ? 1 : -1));
+                let color;
+                if (size > 60) {
+                    color = '#9370DB'; // 紫色
+                } else if (size < 30) {
+                    color = '#0066ff'; // 蓝色
+                } else if (size < 50) {
+                    color = '#ffff00'; // 黄色
+                } else {
+                    color = '#ff0000'; // 红色
+                }
+                const fish = new Fish(x, y, size, color, speed);
+                fish.direction = direction;
+                fishes.push(fish);
+            }
+        }
+
+        // 更新游戏
+        function update() {
+            if (gameOver || gameWin || isPaused || gameState !== 'playing') return;
+
+            // 更新玩家1
+            if (player1Alive) {
+                player1.update();
+            }
+
+            // 更新玩家2
+            if (player2Alive && gameMode === 'two') {
+                player2.update();
+            }
+
+            for (let fish of fishes) {
+                fish.update();
+            }
+
+            // 处理玩家1的无敌时间
+            if (isInvincible1) {
+                invincibleTimer1++;
+                if (invincibleTimer1 >= 180) { // 3秒 = 60帧/秒 * 3秒
+                    isInvincible1 = false;
+                }
+            }
+
+            // 处理玩家2的无敌时间
+            if (isInvincible2 && gameMode === 'two') {
+                invincibleTimer2++;
+                if (invincibleTimer2 >= 180) {
+                    isInvincible2 = false;
+                }
+            }
+
+            // 处理鱼饵
+            baitSpawnTimer++;
+            if (baitSpawnTimer >= 300) { // 每300帧生成一个鱼饵
+                baitSpawnTimer = 0;
+                baits.push(new Bait());
+            }
+
+            // 更新鱼饵
+            const baitsToRemove = [];
+            for (let i = 0; i < baits.length; i++) {
+                baits[i].update();
+                if (baits[i].isOffScreen()) {
+                    baitsToRemove.push(i);
+                } else {
+                    // 检查玩家1是否吃到鱼饵
+                    if (player1Alive) {
+                        const dx1 = player1.x + player1.size / 2 - baits[i].x;
+                        const dy1 = player1.y + player1.size / 4 - baits[i].y;
+                        const distance1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+                        if (distance1 < player1.size / 4 + baits[i].size) {
+                            // 吃到鱼饵
+                            playCollisionSound();
+                            score += baits[i].value;
+                            directionReversed1 = !directionReversed1; // 反转方向
+                            baitsToRemove.push(i);
+                        }
+                    }
+                    
+                    // 检查玩家2是否吃到鱼饵
+                    if (player2Alive && gameMode === 'two') {
+                        const dx2 = player2.x + player2.size / 2 - baits[i].x;
+                        const dy2 = player2.y + player2.size / 4 - baits[i].y;
+                        const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                        if (distance2 < player2.size / 4 + baits[i].size) {
+                            // 吃到鱼饵
+                            playCollisionSound();
+                            score += baits[i].value;
+                            directionReversed2 = !directionReversed2; // 反转方向
+                            baitsToRemove.push(i);
+                        }
+                    }
+                }
+            }
+
+            for (let i = baitsToRemove.length - 1; i >= 0; i--) {
+                baits.splice(baitsToRemove[i], 1);
+            }
+
+            // 持续生成鱼
+            fishSpawnTimer++;
+            if (fishSpawnTimer >= 120) {
+                fishSpawnTimer = 0;
+                // 检查是否有比玩家大的鱼
+                let hasBigFish = false;
+                if (player1Alive) {
+                    hasBigFish = fishes.some(fish => fish.size > player1.size);
+                }
+                if (player2Alive && gameMode === 'two') {
+                    hasBigFish = hasBigFish || fishes.some(fish => fish.size > player2.size);
+                }
+                
+                // 确定鱼的大小
+                let size;
+                if (hasBigFish) {
+                    size = Math.random() * 60 + 20;
+                } else {
+                    let maxPlayerSize = 50;
+                    if (player1Alive && player1.size > maxPlayerSize) {
+                        maxPlayerSize = player1.size;
+                    }
+                    if (player2Alive && gameMode === 'two' && player2.size > maxPlayerSize) {
+                        maxPlayerSize = player2.size;
+                    }
+                    size = maxPlayerSize + Math.random() * 30 + 10;
+                }
+                
+                const x = Math.random() > 0.5 ? -size : canvas.width;
+                const y = Math.random() * (canvas.height - size / 2);
+                const speed = Math.random() * 2 + 1;
+                const direction = x < 0 ? 1 : -1;
+                let color;
+                if (size > 60) {
+                    color = '#9370DB';
+                } else if (size < 30) {
+                    color = '#0066ff';
+                } else if (size < 50) {
+                    color = '#ffff00';
+                } else {
+                    color = '#ff0000';
+                }
+                const newFish = new Fish(x, y, size, color, speed);
+                newFish.direction = direction;
+                fishes.push(newFish);
+            }
+
+            // 确保始终有比玩家大的鱼
+            let hasBigFish = false;
+            if (player1Alive) {
+                hasBigFish = fishes.some(fish => fish.size > player1.size);
+            }
+            if (player2Alive && gameMode === 'two') {
+                hasBigFish = hasBigFish || fishes.some(fish => fish.size > player2.size);
+            }
+            
+            if (!hasBigFish) {
+                let maxPlayerSize = 50;
+                if (player1Alive && player1.size > maxPlayerSize) {
+                    maxPlayerSize = player1.size;
+                }
+                if (player2Alive && gameMode === 'two' && player2.size > maxPlayerSize) {
+                    maxPlayerSize = player2.size;
+                }
+                const size = maxPlayerSize + Math.random() * 30 + 10;
+                const x = Math.random() > 0.5 ? -size : canvas.width;
+                const y = Math.random() * (canvas.height - size / 2);
+                const speed = Math.random() * 2 + 1;
+                const direction = x < 0 ? 1 : -1;
+                const bigFish = new Fish(x, y, size, '#9370DB', speed);
+                bigFish.direction = direction;
+                fishes.push(bigFish);
+            }
+
+            // 碰撞检测
+            const fishesToRemove = [];
+            for (let i = 0; i < fishes.length; i++) {
+                // 玩家1与鱼的碰撞
+                if (player1Alive) {
+                    if (player1.checkCollision(fishes[i])) {
+                        playCollisionSound();
+                        if (fishes[i].size < player1.size) {
+                            score += Math.floor(fishes[i].size);
+                            player1.size = Math.min(player1.size + 2, 150);
+                            fishesToRemove.push(i);
+                        } else if (!isInvincible1) {
+                            // 玩家1死亡
+                            player1Alive = false;
+                        }
+                    }
+                }
+                
+                // 玩家2与鱼的碰撞
+                if (player2Alive && gameMode === 'two') {
+                    if (player2.checkCollision(fishes[i])) {
+                        playCollisionSound();
+                        if (fishes[i].size < player2.size) {
+                            score += Math.floor(fishes[i].size);
+                            player2.size = Math.min(player2.size + 2, 150);
+                            if (!fishesToRemove.includes(i)) {
+                                fishesToRemove.push(i);
+                            }
+                        } else if (!isInvincible2) {
+                            // 玩家2死亡
+                            player2Alive = false;
+                        }
+                    }
+                }
+            }
+
+            for (let i = fishesToRemove.length - 1; i >= 0; i--) {
+                fishes.splice(fishesToRemove[i], 1);
+            }
+
+            // 检查游戏是否结束（所有玩家都死亡）
+            if ((!player1Alive && gameMode === 'single') || (!player1Alive && !player2Alive && gameMode === 'two')) {
+                gameOver = true;
+                gameOverElement.style.display = 'block';
+                finalScoreElement.textContent = score;
+                const rank = saveHighScore(score);
+                finalRankElement.textContent = rank;
+                playGameOverSound();
+                // 游戏结束时停止音乐
+                if (backgroundMusic) {
+                    backgroundMusic.pause();
+                }
+                gameState = 'game-over';
+            }
+
+            // 检查获胜条件
+            if (score >= 10000 && !gameWin) {
+                gameWin = true;
+                gameWinElement.style.display = 'block';
+                winScoreElement.textContent = score;
+                const rank = saveHighScore(score);
+                winRankElement.textContent = rank;
+                playGameWinSound();
+                // 游戏胜利时停止音乐
+                if (backgroundMusic) {
+                    backgroundMusic.pause();
+                }
+                gameState = 'game-win';
+            }
+
+            scoreElement.textContent = `分数: ${score}`;
+        }
+
+        // 绘制游戏
+        function draw() {
+            if (gameState !== 'playing' && !isPaused) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制玩家1
+            if (player1Alive) {
+                if (isInvincible1) {
+                    // 无敌状态下闪烁效果
+                    if (Math.floor(invincibleTimer1 / 10) % 2 === 0) {
+                        player1.draw();
+                    }
+                } else {
+                    player1.draw();
+                }
+            }
+
+            // 绘制玩家2
+            if (player2Alive && gameMode === 'two') {
+                if (isInvincible2) {
+                    // 无敌状态下闪烁效果
+                    if (Math.floor(invincibleTimer2 / 10) % 2 === 0) {
+                        player2.draw();
+                    }
+                } else {
+                    player2.draw();
+                }
+            }
+
+            for (let fish of fishes) {
+                fish.draw();
+            }
+
+            // 绘制鱼饵
+            for (let bait of baits) {
+                bait.draw();
+            }
+        }
+
+        // 游戏循环
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 键盘事件
+        window.addEventListener('keydown', (e) => {
+            if (gameState === 'playing') {
+                keys[e.key] = true;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // 重新开始按钮
+        restartBtn.addEventListener('click', function() {
+            init();
+            gameOver = false;
+            gameWin = false;
+            gameOverElement.style.display = 'none';
+            gameWinElement.style.display = 'none';
+            gameUI.style.display = 'block';
+            gameState = 'playing';
+            
+            // 重新开始游戏时播放背景音乐
+            if (soundEnabled) {
+                playBackgroundMusic();
+            }
+        });
+
+        // 开始游戏循环
+        gameLoop();
+    </script>
+</body>
+</html>

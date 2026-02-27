@@ -1,0 +1,3551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOPE - 不岛币游戏</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+        .header {
+            text-align: center;
+            padding: 60px 20px 30px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(90deg, #00bcd4, #4dd0e1, #80deea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        .header p { font-size: 1.1rem; color: #b0bec5; }
+        .header-buttons {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .header-btn {
+            background: rgba(0, 188, 212, 0.2);
+            color: #4dd0e1;
+            border: 1px solid rgba(0, 188, 212, 0.4);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        .header-btn:hover {
+            background: rgba(0, 188, 212, 0.4);
+            transform: translateY(-2px);
+        }
+        .message-btn-header {
+            background: rgba(255, 255, 255, 0.08);
+            color: #b0bec5;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 10px 12px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .message-btn-header:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        .message-btn-header svg {
+            stroke: #b0bec5;
+        }
+        .message-btn-header:hover svg {
+            stroke: #fff;
+        }
+        .unread-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #f44336;
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
+        .username-scroll {
+            display: block;
+        }
+        .username-scroll:hover .username-text {
+            display: inline-block;
+            animation: scrollText 5s linear infinite;
+        }
+        @keyframes scrollText {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 25px;
+        }
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00bcd4, #7c4dff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        .user-name { font-size: 0.9rem; color: #fff; }
+        .user-dropdown { position: relative; }
+        .dropdown-arrow { font-size: 0.7rem; color: #b0bec5; margin-left: 5px; transition: transform 0.3s; }
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(30, 40, 50, 0.98);
+            border-radius: 12px;
+            min-width: 180px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            margin-top: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .dropdown-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .dropdown-item:hover {
+            background: rgba(0, 188, 212, 0.2);
+            color: #00bcd4;
+        }
+        .dropdown-item:first-child { border-radius: 12px 12px 0 0; }
+        .dropdown-item:last-child { border-radius: 0 0 12px 12px; }
+        .dropdown-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 5px 0;
+        }
+        .logout-item { color: #ff6b6b; }
+        .logout-item:hover { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+        .admin-only { color: #ffd700; }
+        .admin-only:hover { background: rgba(255, 215, 0, 0.2); color: #ffd700; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; }
+        .section-title {
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 4px solid #00bcd4;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .badge {
+            background: rgba(255, 193, 7, 0.3);
+            color: #ffc107;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            padding: 10px 0;
+        }
+        .game-card {
+            background: rgba(50, 50, 50, 0.8);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        .game-preview {
+            height: 160px;
+            background: linear-gradient(135deg, #006064 0%, #00838f 50%, #0097a7 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .game-preview::before {
+            content: '';
+            position: absolute;
+            width: 300%;
+            height: 300%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+            animation: wave 4s ease-in-out infinite;
+        }
+        @keyframes wave {
+            0%, 100% { transform: translate(-30%, -30%) scale(1); }
+            50% { transform: translate(-30%, -30%) scale(1.3); }
+        }
+        .game-icon { font-size: 4.5rem; z-index: 1; animation: float 3s ease-in-out infinite; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .game-info { padding: 20px; }
+        .game-title { font-size: 1.4rem; margin-bottom: 5px; color: #fff; }
+        .game-author { color: #78909c; font-size: 0.85rem; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .follow-btn {
+            background: rgba(76, 175, 80, 0.3);
+            color: #81c784;
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            padding: 3px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        .follow-btn:hover { background: rgba(76, 175, 80, 0.5); }
+        .follow-btn.following {
+            background: rgba(158, 158, 158, 0.3);
+            color: #bdbdbd;
+            border-color: rgba(158, 158, 158, 0.5);
+        }
+        .game-description { color: #b0bec5; font-size: 0.9rem; line-height: 1.5; margin-bottom: 12px; }
+        .game-tags { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; }
+        .tag {
+            background: rgba(100, 100, 100, 0.4);
+            color: #bbb;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            border: 1px solid rgba(0, 188, 212, 0.4);
+        }
+        .game-actions { display: flex; gap: 6px; justify-content: center; margin-bottom: 8px; flex-wrap: wrap; }
+        .game-actions-row { display: flex; gap: 6px; justify-content: center; flex-wrap: nowrap; width: 100%; }
+        .game-actions-row.secondary { gap: 8px; }
+        .game-actions-row.secondary .update-btn,
+        .game-actions-row.secondary .remove-btn {
+            padding: 5px 10px;
+            font-size: 0.75rem;
+        }
+        .play-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #4a4a4a, #3a3a3a);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .play-btn:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); }
+        .comment-btn {
+            background: rgba(80, 80, 80, 0.5);
+            color: #ccc;
+            border: 1px solid rgba(156, 39, 176, 0.5);
+            padding: 10px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        .comment-btn:hover { background: rgba(156, 39, 176, 0.5); }
+        .favorite-btn {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.5);
+            padding: 10px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        .favorite-btn:hover { background: rgba(255, 193, 7, 0.4); transform: scale(1.1); }
+        .favorite-btn.favorited { background: rgba(255, 193, 7, 0.5); }
+        .update-btn {
+            background: rgba(255, 152, 0, 0.3);
+            color: #ffb74d;
+            border: 1px solid rgba(255, 152, 0, 0.5);
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        .update-btn:hover { background: rgba(255, 152, 0, 0.5); }
+        .remove-btn {
+            background: rgba(244, 67, 54, 0.3);
+            color: #ef5350;
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        .remove-btn:hover { background: rgba(244, 67, 54, 0.5); }
+        .game-stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.85rem;
+            color: #78909c;
+        }
+        .game-stats span { display: flex; align-items: center; gap: 5px; }
+        .admin-badge {
+            background: rgba(255, 193, 7, 0.3);
+            color: #ffc107;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            background: rgba(0, 0, 0, 0.4);
+            margin-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .footer p { color: #546e7a; font-size: 0.9rem; }
+        .bubbles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: -1;
+        }
+        .bubble {
+            position: absolute;
+            bottom: -100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: rise 15s infinite;
+        }
+        @keyframes rise {
+            0% { transform: translateY(0) scale(1); opacity: 0.3; }
+            100% { transform: translateY(-100vh) scale(0.5); opacity: 0; }
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            border-radius: 20px;
+            padding: 35px;
+            max-width: 480px;
+            width: 90%;
+            border: 2px solid rgba(0, 188, 212, 0.3);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content.wide { max-width: 700px; }
+        .modal-title {
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #4dd0e1;
+        }
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #b0bec5;
+            transition: color 0.3s;
+        }
+        .close-btn:hover { color: #fff; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 6px; color: #b0bec5; font-size: 0.9rem; }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid rgba(0, 188, 212, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus { outline: none; border-color: rgba(0, 188, 212, 0.6); }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .form-hint { font-size: 0.8rem; color: #78909c; margin-top: 5px; }
+        .file-drop-zone {
+            border: 2px dashed rgba(0, 188, 212, 0.5);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(0, 188, 212, 0.05);
+        }
+        .file-drop-zone:hover {
+            border-color: #00bcd4;
+            background: rgba(0, 188, 212, 0.1);
+        }
+        .file-drop-zone.dragover {
+            border-color: #4dd0e1;
+            background: rgba(0, 188, 212, 0.2);
+            transform: scale(1.02);
+        }
+        .drop-zone-content .drop-icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .drop-zone-content p {
+            color: #b0bec5;
+            margin: 5px 0;
+        }
+        .drop-zone-content .file-name {
+            color: #4dd0e1;
+            font-weight: bold;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #00bcd4, #0097a7);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .submit-btn:hover { transform: scale(1.02); box-shadow: 0 8px 20px rgba(0, 188, 212, 0.4); }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .form-switch { text-align: center; margin-top: 15px; font-size: 0.9rem; color: #b0bec5; }
+        .form-switch a { color: #4dd0e1; cursor: pointer; text-decoration: underline; }
+        .pending-section { margin-top: 40px; padding-top: 25px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+        .pending-card {
+            background: rgba(255, 193, 7, 0.1);
+            border: 2px solid rgba(255, 193, 7, 0.3);
+            border-radius: 15px;
+            padding: 18px;
+            margin-bottom: 12px;
+        }
+        .pending-card h4 { color: #ffc107; margin-bottom: 8px; font-size: 1.1rem; }
+        .pending-card p { color: #b0bec5; font-size: 0.85rem; margin-bottom: 10px; }
+        .pending-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .approve-btn {
+            background: rgba(76, 175, 80, 0.3);
+            color: #81c784;
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            padding: 8px 18px;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .approve-btn:hover { background: rgba(76, 175, 80, 0.5); }
+        .reject-btn {
+            background: rgba(244, 67, 54, 0.3);
+            color: #ef5350;
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            padding: 8px 18px;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .reject-btn:hover { background: rgba(244, 67, 54, 0.5); }
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            border-radius: 10px;
+            z-index: 2000;
+            animation: slideDown 0.3s ease;
+            background: #fff;
+            color: #333;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            font-weight: 500;
+        }
+        .notification.error {
+            color: #e53935;
+            border-left: 4px solid #e53935;
+        }
+        .notification.success {
+            color: #333;
+            border-left: 4px solid #4caf50;
+        }
+        .notification.info {
+            color: #333;
+            border-left: 4px solid #2196f3;
+        }
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .notification.success { background: rgba(76, 175, 80, 0.9); color: #fff; }
+        .notification.error { background: rgba(244, 67, 54, 0.9); color: #fff; }
+        .notification.info { background: rgba(33, 150, 243, 0.9); color: #fff; }
+        .upload-section {
+            text-align: center;
+            margin-top: 30px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            border: 2px dashed rgba(0, 188, 212, 0.3);
+        }
+        .upload-section h3 { color: #4dd0e1; margin-bottom: 10px; font-size: 1.2rem; }
+        .upload-section p { color: #b0bec5; margin-bottom: 15px; font-size: 0.9rem; }
+        .upload-btn {
+            background: linear-gradient(135deg, #7c4dff, #651fff);
+            color: #fff;
+            padding: 12px 35px;
+            border-radius: 25px;
+            border: none;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-btn:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(124, 77, 255, 0.4); }
+        .empty-state { text-align: center; padding: 30px; color: #78909c; }
+        .empty-state-icon { font-size: 3rem; margin-bottom: 10px; }
+        .comments-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+        .comment-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .comment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .comment-author { font-weight: bold; color: #4dd0e1; font-size: 0.9rem; }
+        .comment-time { font-size: 0.75rem; color: #78909c; }
+        .comment-text { color: #b0bec5; font-size: 0.9rem; line-height: 1.5; }
+        .comment-form { display: flex; gap: 10px; margin-top: 15px; }
+        .comment-form input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid rgba(0, 188, 212, 0.3);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.9rem;
+        }
+        .comment-form input:focus { outline: none; border-color: rgba(0, 188, 212, 0.6); }
+        .comment-form button {
+            background: linear-gradient(135deg, #00bcd4, #0097a7);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00bcd4, #4dd0e1);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .progress-status { font-size: 0.8rem; color: #78909c; margin-top: 5px; }
+        .my-uploads-section { margin-top: 30px; }
+        .upload-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .upload-item h4 { color: #fff; margin-bottom: 8px; }
+        .upload-item .status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            margin-bottom: 10px;
+        }
+        .status.pending { background: rgba(255, 193, 7, 0.3); color: #ffc107; }
+        .status.approved { background: rgba(76, 175, 80, 0.3); color: #81c784; }
+        .status.rejected { background: rgba(244, 67, 54, 0.3); color: #ef5350; }
+        .status.update_pending { background: rgba(255, 152, 0, 0.3); color: #ffb74d; }
+        .message-btn {
+            background: rgba(33, 150, 243, 0.3);
+            color: #64b5f6;
+            border: 1px solid rgba(33, 150, 243, 0.5);
+            padding: 8px 15px;
+            border-radius: 18px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        .message-btn:hover { background: rgba(33, 150, 243, 0.5); }
+        .messages-list { max-height: 300px; overflow-y: auto; }
+        .message-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .message-item.unread { border-left: 3px solid #00bcd4; }
+        .message-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .message-from { font-weight: bold; color: #4dd0e1; font-size: 0.9rem; }
+        .message-time { font-size: 0.75rem; color: #78909c; }
+        .message-text { color: #b0bec5; font-size: 0.9rem; line-height: 1.5; }
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px;
+            border-radius: 12px;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #b0bec5;
+        }
+        .tab.active { background: rgba(0, 188, 212, 0.3); color: #4dd0e1; }
+        .tab:hover:not(.active) { background: rgba(255, 255, 255, 0.05); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .update-type {
+            background: rgba(255, 152, 0, 0.2);
+            color: #ffb74d;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            margin-left: 8px;
+        }
+        .stat-card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(0, 188, 212, 0.2);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4dd0e1;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #78909c;
+            margin-top: 5px;
+        }
+        .user-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+        }
+        .user-item-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-item-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00bcd4, #7c4dff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        .user-item-name {
+            font-weight: bold;
+            color: #fff;
+        }
+        .user-item-time {
+            font-size: 0.75rem;
+            color: #78909c;
+        }
+        .cover-upload {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .cover-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #006064 0%, #00838f 50%, #0097a7 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(0, 188, 212, 0.3);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .cover-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .cover-preview span {
+            font-size: 3rem;
+        }
+        .cover-options {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .cover-btn {
+            background: rgba(0, 188, 212, 0.2);
+            color: #4dd0e1;
+            border: 1px solid rgba(0, 188, 212, 0.4);
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        .cover-btn:hover {
+            background: rgba(0, 188, 212, 0.4);
+        }
+        .cover-options select {
+            padding: 10px;
+            border: 2px solid rgba(0, 188, 212, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.95rem;
+        }
+        .game-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .game-preview .icon-wrapper {
+            font-size: 4.5rem;
+            z-index: 1;
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="bubbles">
+        <div class="bubble" style="left: 10%; width: 40px; height: 40px; animation-delay: 0s;"></div>
+        <div class="bubble" style="left: 20%; width: 20px; height: 20px; animation-delay: 2s;"></div>
+        <div class="bubble" style="left: 35%; width: 60px; height: 60px; animation-delay: 4s;"></div>
+        <div class="bubble" style="left: 50%; width: 30px; height: 30px; animation-delay: 1s;"></div>
+        <div class="bubble" style="left: 65%; width: 50px; height: 50px; animation-delay: 3s;"></div>
+        <div class="bubble" style="left: 80%; width: 25px; height: 25px; animation-delay: 5s;"></div>
+    </div>
+
+    <header class="header">
+        <div class="header-buttons">
+            <div id="authButtons">
+                <button class="header-btn" onclick="openAuthModal('login')">登录</button>
+                <button class="header-btn" onclick="openAuthModal('register')">注册</button>
+            </div>
+            <div id="userArea" style="display: none; gap: 15px;">
+                <div class="user-dropdown">
+                    <div class="user-info" onclick="toggleUserMenu()" style="cursor: pointer;">
+                        <div class="user-avatar">👤</div>
+                        <span class="user-name" id="displayUsername"></span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="dropdown-menu" id="userDropdownMenu">
+                        <div class="dropdown-item" onclick="openProfileModal()">个人主页</div>
+                        <div class="dropdown-item" onclick="openMyGamesPage()">我的游戏</div>
+                        <div class="dropdown-item" onclick="openGameManagePage()">游戏管理</div>
+                        <div class="dropdown-item admin-only" id="adminModeBtn" onclick="openAdminModal()" style="display: none;">管理模式</div>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-item logout-item" onclick="logout()">退出登录</div>
+                    </div>
+                </div>
+                <button class="message-btn-header" onclick="openMessagesModal()" title="消息">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    <span class="unread-badge" id="unreadBadge" style="display: none;">0</span>
+                </button>
+            </div>
+        </div>
+        <h1>NOPE - 不岛币游戏</h1>
+        <p>探索精彩游戏世界 | 欢迎上传你的作品</p>
+    </header>
+
+    <div class="search-bar" style="max-width: 600px; margin: 20px auto 20px; padding: 0 20px;">
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="searchInput" placeholder="搜索游戏或用户..." style="flex: 1; padding: 12px 20px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.2); background: rgba(50,50,50,0.8); color: #fff; font-size: 0.95rem;" onkeypress="if(event.key==='Enter')openSearchPage()">
+            <button onclick="openSearchPage()" style="padding: 12px 14px; border-radius: 25px; background: rgba(255, 255, 255, 0.1); color: #b0bec5; border: 1px solid rgba(255, 255, 255, 0.2); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="container" id="homePage">
+        <h2 class="section-title">游戏列表</h2>
+        <div class="games-grid" id="gamesGrid"></div>
+
+
+    </div>
+
+    <div class="container" id="searchPage" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+            <button onclick="backToHome()" style="background: rgba(255,255,255,0.1); color: #fff; border: none; padding: 10px 15px; border-radius: 10px; cursor: pointer;">← 返回</button>
+            <h2 class="section-title" style="margin: 0;">搜索结果</h2>
+        </div>
+        <div id="searchResultsContainer"></div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2024 NOPE - 不岛币游戏 | 用 ❤️ 制作</p>
+    </footer>
+
+    <div class="modal" id="authModal">
+        <div class="modal-content" style="background: rgba(30, 40, 50, 0.98);">
+            <span class="close-btn" onclick="closeAuthModal()">&times;</span>
+            <h3 class="modal-title" id="authTitle">登录</h3>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="loginUsername" required placeholder="输入用户名">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="loginPassword" required placeholder="输入密码">
+                </div>
+                <button type="submit" class="submit-btn">登录</button>
+                <p class="form-switch">没有账号？<a onclick="openAuthModal('register')">立即注册</a> | <a onclick="openAuthModal('forgot')">忘记密码？</a></p>
+            </form>
+            <form id="registerForm" style="display: none;" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="regUsername" required placeholder="3-20个字符，不可重复">
+                    <p class="form-hint">用户名一旦注册不可更改，且不能重复</p>
+                </div>
+                <div class="form-group">
+                    <label>邮箱</label>
+                    <input type="email" id="regEmail" required placeholder="输入邮箱">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="regPassword" required placeholder="至少6位，需包含字母和数字">
+                    <p class="form-hint">密码必须包含字母和数字，可包含特殊字符</p>
+                </div>
+                <div class="form-group">
+                    <label>确认密码</label>
+                    <input type="password" id="regConfirm" required placeholder="再次输入密码">
+                </div>
+                <button type="submit" class="submit-btn">注册</button>
+                <p class="form-switch">已有账号？<a onclick="openAuthModal('login')">立即登录</a></p>
+            </form>
+            <form id="forgotForm" style="display: none;" onsubmit="handleForgotPassword(event)">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="forgotUsername" required placeholder="输入用户名">
+                </div>
+                <div class="form-group">
+                    <label>注册邮箱</label>
+                    <input type="email" id="forgotEmail" required placeholder="输入注册时使用的邮箱">
+                </div>
+                <div class="form-group">
+                    <label>新密码</label>
+                    <input type="password" id="newPassword" required placeholder="至少6位，需包含字母和数字">
+                    <p class="form-hint">密码必须包含字母和数字</p>
+                </div>
+                <div class="form-group">
+                    <label>确认新密码</label>
+                    <input type="password" id="newPasswordConfirm" required placeholder="再次输入新密码">
+                </div>
+                <button type="submit" class="submit-btn">重置密码</button>
+                <p class="form-switch">想起密码了？<a onclick="openAuthModal('login')">立即登录</a></p>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="uploadModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeUploadModal()">&times;</span>
+            <h3 class="modal-title" id="uploadModalTitle">📤 申请上传游戏</h3>
+            <form id="uploadForm" onsubmit="submitGame(event)">
+                <input type="hidden" id="updateGameId" value="">
+                <div class="form-group">
+                    <label>游戏名称 *</label>
+                    <input type="text" id="gameName" required placeholder="输入游戏名称（可重复）">
+                </div>
+                <div class="form-group">
+                    <label>游戏描述 *</label>
+                    <textarea id="gameDesc" required placeholder="简要描述你的游戏"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>游戏简介 *</label>
+                    <textarea id="gameIntro" required placeholder="详细介绍游戏玩法、操作方式、特色等（将在游戏详情页展示）" style="min-height: 120px;"></textarea>
+                    <p class="form-hint">详细介绍游戏内容，方便管理员审核和玩家了解</p>
+                </div>
+                <div class="form-group">
+                    <label>游戏链接 *</label>
+                    <input type="text" id="gameUrl" required placeholder="游戏文件的相对路径">
+                </div>
+                <div class="form-group">
+                    <label>游戏封面</label>
+                    <div class="cover-upload">
+                        <div class="cover-preview" id="coverPreview">
+                            <span id="coverPreviewIcon">🎮</span>
+                        </div>
+                        <div class="cover-options">
+                            <input type="file" id="gameCover" accept="image/*" onchange="previewCover(event)" style="display: none;">
+                            <button type="button" class="cover-btn" onclick="document.getElementById('gameCover').click()">📷 上传图片</button>
+                            <select id="gameIcon" onchange="updateCoverPreview()">
+                                <option value="🎮">🎮 游戏</option>
+                                <option value="🐟">🐟 鱼类</option>
+                                <option value="🚀">🚀 太空</option>
+                                <option value="🎯">🎯 射击</option>
+                                <option value="🧩">🧩 益智</option>
+                                <option value="🏃">🏃 动作</option>
+                                <option value="🏰">🏰 冒险</option>
+                                <option value="🏎️">🏎️ 竞速</option>
+                                <option value="⚽">⚽ 体育</option>
+                                <option value="🎲">🎲 其他</option>
+                            </select>
+                            <p class="form-hint">可上传图片或选择图标作为封面</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>游戏标签（用逗号分隔）</label>
+                    <input type="text" id="gameTags" placeholder="如：休闲, HTML5, 动作">
+                </div>
+                <button type="submit" class="submit-btn" id="uploadSubmitBtn">提交申请</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="commentModal">
+        <div class="modal-content wide">
+            <span class="close-btn" onclick="closeCommentModal()">&times;</span>
+            <h3 class="modal-title" id="commentGameTitle">游戏评论</h3>
+            <div class="comments-section" id="commentsList"></div>
+            <div class="comment-form">
+                <input type="text" id="commentInput" placeholder="写下你的评论或建议...">
+                <button onclick="submitComment()">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="messagesModal">
+        <div class="modal-content" style="max-width: 900px; height: 650px; display: flex; flex-direction: column; background: rgba(30, 40, 50, 0.98);">
+            <span class="close-btn" onclick="closeMessagesModal()">&times;</span>
+            
+            <div class="chat-container" style="display: flex; flex: 1; overflow: hidden; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
+                <div class="chat-sidebar" style="width: 200px; background: rgba(0,0,0,0.3); border-right: 1px solid rgba(255,255,255,0.1); overflow-y: auto;">
+                    <div id="chatUserList" style="padding: 10px;"></div>
+                </div>
+                <div class="chat-main" style="flex: 1; display: flex; flex-direction: column;">
+                    <div class="chat-header" id="chatHeader" style="padding: 15px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <span id="chatWithUser">选择一个用户开始聊天</span>
+                    </div>
+                    <div class="chat-messages" id="chatMessages" style="flex: 1; overflow-y: auto; padding: 15px;"></div>
+                    <div class="chat-input" id="chatInputArea" style="padding: 15px; background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.1); display: none;">
+                        <form onsubmit="sendChatMessage(event)" style="display: flex; gap: 10px;">
+                            <input type="text" id="chatInput" placeholder="输入消息..." style="flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff;">
+                            <button type="submit" class="submit-btn" style="border-radius: 20px; padding: 10px 20px;">发送</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="profileModal">
+        <div class="modal-content" style="max-width: 600px; background: rgba(30, 40, 50, 0.98);">
+            <span class="close-btn" onclick="closeProfileModal()">&times;</span>
+            <h3 class="modal-title">个人主页</h3>
+            
+            <div class="tabs" style="margin-bottom: 15px;">
+                <div class="tab active" onclick="switchSettingsTab('following')">我的关注 (<span id="followingCountTab">0</span>)</div>
+                <div class="tab" onclick="switchSettingsTab('followers')">我的粉丝 (<span id="followersCountTab">0</span>)</div>
+                <div class="tab" onclick="switchSettingsTab('info')">修改信息</div>
+            </div>
+            
+            <div id="followingTab" class="tab-content active">
+                <div id="followingList" style="min-height: 400px;"></div>
+            </div>
+            
+            <div id="followersTab" class="tab-content">
+                <div id="followersList" style="min-height: 400px;"></div>
+            </div>
+            
+            <div id="infoTab" class="tab-content">
+                <form id="settingsForm" onsubmit="updateUserInfo(event)" style="min-height: 400px;">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" id="settingsUsername" readonly style="background: rgba(255,255,255,0.02); color: #78909c;">
+                        <p class="form-hint">用户名不可更改</p>
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input type="email" id="settingsEmail" required placeholder="输入新邮箱">
+                    </div>
+                    <div class="form-group">
+                        <label>当前密码</label>
+                        <input type="password" id="settingsCurrentPassword" placeholder="输入当前密码以验证身份">
+                    </div>
+                    <div class="form-group">
+                        <label>新密码（留空则不修改）</label>
+                        <input type="password" id="settingsNewPassword" placeholder="至少6位，需包含字母和数字">
+                        <p class="form-hint">密码必须包含字母和数字</p>
+                    </div>
+                    <div class="form-group">
+                        <label>确认新密码</label>
+                        <input type="password" id="settingsConfirmPassword" placeholder="再次输入新密码">
+                    </div>
+                    <button type="submit" class="submit-btn">保存修改</button>
+                </form>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <h4 style="color: #ff6b6b; margin-bottom: 15px;">⚠️ 危险操作</h4>
+                    <p style="color: #b0bec5; font-size: 0.9rem; margin-bottom: 15px;">注销账号将删除所有数据，此操作不可恢复！</p>
+                    <button class="reject-btn" onclick="deleteAccount()" style="width: 100%;">🗑️ 注销账号</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="adminModal">
+        <div class="modal-content wide">
+            <span class="close-btn" onclick="closeAdminModal()">&times;</span>
+            <h3 class="modal-title">管理员面板</h3>
+            <div class="tabs">
+                <div class="tab active" onclick="switchAdminTab('pending')">待审核</div>
+                <div class="tab" onclick="switchAdminTab('edits')">编辑审核</div>
+                <div class="tab" onclick="switchAdminTab('updates')">更新审核</div>
+                <div class="tab" onclick="switchAdminTab('deletes')">下架审核</div>
+                <div class="tab" onclick="switchAdminTab('games')">游戏管理</div>
+                <div class="tab" onclick="switchAdminTab('users')">用户管理</div>
+                <div class="tab" onclick="switchAdminTab('messages')">私信管理</div>
+            </div>
+            <div id="pendingTab" class="tab-content active">
+                <div id="adminPendingList"></div>
+            </div>
+            <div id="editsTab" class="tab-content">
+                <div id="adminEditsList"></div>
+            </div>
+            <div id="updatesTab" class="tab-content">
+                <div id="adminUpdatesList"></div>
+            </div>
+            <div id="deletesTab" class="tab-content">
+                <div id="adminDeletesList"></div>
+            </div>
+            <div id="gamesTab" class="tab-content">
+                <div style="margin-bottom: 15px;">
+                    <button class="reject-btn" onclick="removeAllGames()" style="width: 100%;">🗑️ 强制下架所有游戏</button>
+                </div>
+                <div id="adminGamesList"></div>
+            </div>
+            <div id="usersTab" class="tab-content">
+                <div id="usersList"></div>
+            </div>
+            <div id="messagesTab" class="tab-content">
+                <div id="adminMessagesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PASSWORD = 'trae2024';
+        let currentUser = null;
+        let isAdmin = false;
+        let currentGameId = null;
+
+        const defaultGames = [
+            {
+                id: 'default-1',
+                name: '海底耗子',
+                description: '在神秘的海底世界中，控制你的小鱼不断成长，躲避更大的鱼，成为海洋霸主！',
+                url: 'fish_game_simple.html',
+                icon: '🐟',
+                tags: ['休闲', '冒险', 'HTML5'],
+                author: '管理员',
+                authorId: 'admin',
+                isDefault: true,
+                isAdminGame: true,
+                status: 'approved',
+                comments: [],
+                plays: 0,
+                version: 1
+            }
+        ];
+
+        async function init() {
+            const serverGames = await fetchGamesFromServer();
+            
+            if (!serverGames) {
+                if (!localStorage.getItem('games')) {
+                    localStorage.setItem('games', JSON.stringify(defaultGames));
+                } else {
+                    const games = getGames();
+                    games.forEach((game, index) => {
+                        if (!game.status) {
+                            games[index].status = 'approved';
+                        }
+                    });
+                    
+                    const defaultGameIndex = games.findIndex(g => g.id === 'default-1');
+                    if (defaultGameIndex === -1) {
+                        games.push(defaultGames[0]);
+                    } else {
+                        const existingComments = games[defaultGameIndex].comments || [];
+                        const existingPlays = games[defaultGameIndex].plays || 0;
+                        games[defaultGameIndex] = { 
+                            ...defaultGames[0], 
+                            comments: existingComments, 
+                            plays: existingPlays 
+                        };
+                    }
+                    saveGames(games);
+                }
+            }
+            if (!localStorage.getItem('users')) {
+                const adminUser = {
+                    id: 'admin',
+                    username: 'admin',
+                    password: ADMIN_PASSWORD,
+                    email: 'admin@trae.com',
+                    isAdmin: true,
+                    createdAt: new Date().toISOString()
+                };
+                localStorage.setItem('users', JSON.stringify([adminUser]));
+            }
+            if (!localStorage.getItem('pendingGames')) {
+                localStorage.setItem('pendingGames', JSON.stringify([]));
+            }
+            if (!localStorage.getItem('pendingUpdates')) {
+                localStorage.setItem('pendingUpdates', JSON.stringify([]));
+            }
+            if (!localStorage.getItem('messages')) {
+                localStorage.setItem('messages', JSON.stringify([]));
+            }
+            if (!localStorage.getItem('follows')) {
+                localStorage.setItem('follows', JSON.stringify([]));
+            }
+            if (!localStorage.getItem('activities')) {
+                localStorage.setItem('activities', JSON.stringify([]));
+            }
+            
+            checkLoginStatus();
+            renderGames();
+        }
+
+        function getUsers() { return JSON.parse(localStorage.getItem('users') || '[]'); }
+        const API_URL = window.location.origin;
+        
+        async function fetchGamesFromServer() {
+            try {
+                const response = await fetch(`${API_URL}/api/games`);
+                if (response.ok) {
+                    const games = await response.json();
+                    localStorage.setItem('games', JSON.stringify(games));
+                    return games;
+                }
+            } catch (error) {
+                console.log('从服务器获取游戏失败，使用本地数据');
+            }
+            return null;
+        }
+
+        function getGames() { return JSON.parse(localStorage.getItem('games') || '[]'); }
+        function getPendingGames() { return JSON.parse(localStorage.getItem('pendingGames') || '[]'); }
+        function getPendingUpdates() { return JSON.parse(localStorage.getItem('pendingUpdates') || '[]'); }
+        function getMessages() { return JSON.parse(localStorage.getItem('messages') || '[]'); }
+        function getFollows() { return JSON.parse(localStorage.getItem('follows') || '[]'); }
+        function getActivities() { return JSON.parse(localStorage.getItem('activities') || '[]'); }
+        function saveUsers(users) { localStorage.setItem('users', JSON.stringify(users)); }
+        function saveGames(games) { localStorage.setItem('games', JSON.stringify(games)); }
+        function savePendingGames(pending) { localStorage.setItem('pendingGames', JSON.stringify(pending)); }
+        function savePendingUpdates(updates) { localStorage.setItem('pendingUpdates', JSON.stringify(updates)); }
+        function saveMessages(messages) { localStorage.setItem('messages', JSON.stringify(messages)); }
+        function saveFollows(follows) { localStorage.setItem('follows', JSON.stringify(follows)); }
+        function saveActivities(activities) { localStorage.setItem('activities', JSON.stringify(activities)); }
+
+        function validatePassword(password) {
+            if (password.length < 6) return { valid: false, message: '密码至少6个字符' };
+            const hasLetter = /[a-zA-Z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+            if (!hasLetter || !hasNumber) {
+                return { valid: false, message: '密码必须包含字母和数字' };
+            }
+            return { valid: true };
+        }
+
+        function checkLoginStatus() {
+            const userData = localStorage.getItem('currentUser');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+                isAdmin = currentUser.isAdmin;
+                updateUIForLoggedIn();
+            }
+        }
+
+        function updateUIForLoggedIn() {
+            document.getElementById('authButtons').style.display = 'none';
+            document.getElementById('userArea').style.display = 'flex';
+            document.getElementById('displayUsername').textContent = currentUser.username;
+            
+            if (isAdmin) {
+                document.getElementById('adminTab').style.display = 'block';
+                document.getElementById('adminModeBtn').style.display = 'flex';
+            } else {
+                document.getElementById('adminTab').style.display = 'none';
+                document.getElementById('adminModeBtn').style.display = 'none';
+            }
+            
+            updateUnreadBadge();
+        }
+
+        function updateUIForLoggedOut() {
+            document.getElementById('authButtons').style.display = 'flex';
+            document.getElementById('userArea').style.display = 'none';
+        }
+
+        function toggleUserMenu() {
+            const menu = document.getElementById('userDropdownMenu');
+            menu.classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            const dropdown = document.querySelector('.user-dropdown');
+            const menu = document.getElementById('userDropdownMenu');
+            if (dropdown && menu && !dropdown.contains(e.target)) {
+                menu.classList.remove('show');
+            }
+        });
+
+        function openMyGamesPage() {
+            document.getElementById('userDropdownMenu').classList.remove('show');
+            showMyGamesModal();
+        }
+
+        function openGameManagePage() {
+            document.getElementById('userDropdownMenu').classList.remove('show');
+            showGameManageModal();
+        }
+
+        function showMyGamesModal() {
+            const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+            const games = getGames();
+            const favoriteGames = games.filter(g => favorites.includes(g.id));
+            
+            let html = `
+            <div class="modal" id="myGamesModal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center;">
+                <div class="modal-content" style="background: rgba(30, 40, 50, 0.98); border-radius: 20px; padding: 30px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #fff;">我的游戏</h3>
+                        <span onclick="closeMyGamesModal()" style="cursor: pointer; font-size: 1.5rem; color: #b0bec5;">&times;</span>
+                    </div>
+                    <div id="myGamesContent">
+            `;
+            
+            if (favoriteGames.length === 0) {
+                html += `<p style="color: #b0bec5; text-align: center;">暂无收藏的游戏</p>`;
+            } else {
+                favoriteGames.forEach(game => {
+                    html += `
+                    <div class="game-card" style="margin-bottom: 15px;">
+                        <div class="game-info">
+                            <h4 style="color: #fff;">${game.icon} ${game.name}</h4>
+                            <p style="color: #b0bec5;">${game.description}</p>
+                            <div style="margin-top: 10px;">
+                                <a href="${game.url}" class="play-btn" target="_blank">▶ 开始</a>
+                                <button class="reject-btn" onclick="removeFavorite('${game.id}')">取消收藏</button>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                });
+            }
+            
+            html += `</div></div></div>`;
+            
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function closeMyGamesModal() {
+            const modal = document.getElementById('myGamesModal');
+            if (modal) modal.remove();
+        }
+
+        function showGameManageModal() {
+            if (!currentUser) return;
+            
+            const games = getGames().filter(g => g.authorId === currentUser.id);
+            const pendingEdits = JSON.parse(localStorage.getItem('pendingEdits') || '[]');
+            const pendingUpdates = getPendingUpdates();
+            const pendingDeletes = JSON.parse(localStorage.getItem('pendingDeletes') || '[]');
+            
+            let html = `
+            <div class="modal" id="gameManageModal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center;">
+                <div class="modal-content" style="background: rgba(30, 40, 50, 0.98); border-radius: 20px; padding: 30px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #fff;">游戏管理</h3>
+                        <span onclick="closeGameManageModal()" style="cursor: pointer; font-size: 1.5rem; color: #b0bec5;">&times;</span>
+                    </div>
+                    <div id="gameManageContent">
+            `;
+            
+            if (games.length === 0) {
+                html += `<p style="color: #b0bec5; text-align: center;">暂无上传的游戏</p>`;
+            } else {
+                games.forEach(game => {
+                    const statusText = game.status === 'approved' ? '已发布' : (game.status === 'pending' ? '审核中' : '已拒绝');
+                    const statusColor = game.status === 'approved' ? '#4caf50' : (game.status === 'pending' ? '#ff9800' : '#f44336');
+                    
+                    const pendingEdit = pendingEdits.find(e => e.gameId === game.id);
+                    const pendingUpdate = pendingUpdates.find(u => u.gameId === game.id);
+                    const pendingDelete = pendingDeletes.find(d => d.gameId === game.id);
+                    
+                    let editStatus = '';
+                    if (pendingEdit) {
+                        const timeLeft = Math.max(0, 30 - Math.floor((Date.now() - new Date(pendingEdit.submittedAt).getTime()) / 60000));
+                        editStatus = `<span style="color: #ff9800;">编辑审核中（${timeLeft}分钟后自动通过）</span>`;
+                    }
+                    
+                    let updateStatus = pendingUpdate ? `<span style="color: #ff9800;">更新审核中</span>` : '';
+                    let deleteStatus = pendingDelete ? `<span style="color: #f44336;">下架审核中</span>` : '';
+                    
+                    html += `
+                    <div class="game-card" style="margin-bottom: 15px; padding: 20px;">
+                        <div class="game-info">
+                            <h4 style="color: #fff; margin-bottom: 10px;">${game.icon} ${game.name}</h4>
+                            <p style="color: #b0bec5; margin-bottom: 5px;">${game.description}</p>
+                            <p style="color: ${statusColor}; margin-bottom: 5px;">发布状态：${statusText}</p>
+                            <p style="color: #b0bec5; margin-bottom: 10px;">游玩次数：${game.plays || 0}</p>
+                            ${editStatus ? `<p style="margin-bottom: 5px;">${editStatus}</p>` : ''}
+                            ${updateStatus ? `<p style="margin-bottom: 5px;">${updateStatus}</p>` : ''}
+                            ${deleteStatus ? `<p style="margin-bottom: 10px;">${deleteStatus}</p>` : ''}
+                            <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button class="update-btn" onclick="openEditGameModal('${game.id}')" ${pendingEdit ? 'disabled style="opacity:0.5"' : ''}>📝 编辑</button>
+                                <button class="play-btn" onclick="openUpdateGameModal('${game.id}')" ${pendingUpdate ? 'disabled style="opacity:0.5"' : ''}>🔄 更新</button>
+                                <button class="reject-btn" onclick="requestDeleteGame('${game.id}')" ${pendingDelete ? 'disabled style="opacity:0.5"' : ''}>🗑️ 下架</button>
+                            </div>
+                            <p style="color: #888; font-size: 0.8rem; margin-top: 10px;">
+                                📝 编辑：修改游戏信息，30分钟后自动通过<br>
+                                🔄 更新：重新上传游戏文件，需管理员审核<br>
+                                🗑️ 下架：从网站移除游戏，需管理员审核
+                            </p>
+                        </div>
+                    </div>
+                    `;
+                });
+            }
+            
+            html += `</div></div></div>`;
+            
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function openEditGameModal(gameId) {
+            const games = getGames();
+            const game = games.find(g => g.id === gameId);
+            if (!game) return;
+            
+            const html = `
+            <div class="modal" id="editGameModal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2001; justify-content: center; align-items: center;">
+                <div class="modal-content" style="background: rgba(30, 40, 50, 0.98); border-radius: 20px; padding: 30px; max-width: 500px; width: 90%;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #fff;">📝 编辑游戏信息</h3>
+                        <span onclick="closeEditGameModal()" style="cursor: pointer; font-size: 1.5rem; color: #b0bec5;">&times;</span>
+                    </div>
+                    <form onsubmit="submitEditGame(event, '${gameId}')">
+                        <div class="form-group">
+                            <label>游戏名称</label>
+                            <input type="text" id="editGameName" value="${game.name}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>游戏介绍</label>
+                            <textarea id="editGameDesc" rows="3">${game.description}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>游戏详情</label>
+                            <textarea id="editGameIntro" rows="4">${game.intro || ''}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>游戏图标（emoji）</label>
+                            <input type="text" id="editGameIcon" value="${game.icon}" maxlength="2">
+                        </div>
+                        <div class="form-group">
+                            <label>标签（逗号分隔）</label>
+                            <input type="text" id="editGameTags" value="${game.tags.join(', ')}">
+                        </div>
+                        <p style="color: #ff9800; font-size: 0.85rem; margin-bottom: 15px;">
+                            ⚠️ 编辑申请将在30分钟后自动通过（如无违规内容）
+                        </p>
+                        <button type="submit" class="submit-btn">提交编辑申请</button>
+                    </form>
+                </div>
+            </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function closeEditGameModal() {
+            const modal = document.getElementById('editGameModal');
+            if (modal) modal.remove();
+        }
+
+        function submitEditGame(e, gameId) {
+            e.preventDefault();
+            
+            const editData = {
+                id: 'edit-' + Date.now(),
+                gameId: gameId,
+                name: document.getElementById('editGameName').value,
+                description: document.getElementById('editGameDesc').value,
+                intro: document.getElementById('editGameIntro').value,
+                icon: document.getElementById('editGameIcon').value,
+                tags: document.getElementById('editGameTags').value.split(',').map(t => t.trim()).filter(t => t),
+                author: currentUser.username,
+                authorId: currentUser.id,
+                submittedAt: new Date().toISOString(),
+                autoApproveAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+                status: 'pending'
+            };
+            
+            const pendingEdits = JSON.parse(localStorage.getItem('pendingEdits') || '[]');
+            pendingEdits.push(editData);
+            localStorage.setItem('pendingEdits', JSON.stringify(pendingEdits));
+            
+            closeEditGameModal();
+            closeGameManageModal();
+            showGameManageModal();
+            showNotification('编辑申请已提交，30分钟后自动通过', 'success');
+        }
+
+        function openUpdateGameModal(gameId) {
+            const games = getGames();
+            const game = games.find(g => g.id === gameId);
+            if (!game) return;
+            
+            const html = `
+            <div class="modal" id="updateGameModal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2001; justify-content: center; align-items: center;">
+                <div class="modal-content" style="background: rgba(30, 40, 50, 0.98); border-radius: 20px; padding: 30px; max-width: 500px; width: 90%;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #fff;">🔄 更新游戏文件</h3>
+                        <span onclick="closeUpdateGameModal()" style="cursor: pointer; font-size: 1.5rem; color: #b0bec5;">&times;</span>
+                    </div>
+                    <p style="color: #b0bec5; margin-bottom: 15px;">当前游戏：${game.icon} ${game.name}</p>
+                    <form onsubmit="submitUpdateGame(event, '${gameId}')">
+                        <div class="form-group">
+                            <label>新游戏链接</label>
+                            <input type="text" id="updateGameUrl" placeholder="输入新的游戏链接或上传" required>
+                        </div>
+                        <div class="form-group">
+                            <label>更新说明</label>
+                            <textarea id="updateGameNote" rows="3" placeholder="描述本次更新内容"></textarea>
+                        </div>
+                        <p style="color: #ff9800; font-size: 0.85rem; margin-bottom: 15px;">
+                            ⚠️ 更新需要管理员审核后才会生效
+                        </p>
+                        <button type="submit" class="submit-btn">提交更新申请</button>
+                    </form>
+                </div>
+            </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function closeUpdateGameModal() {
+            const modal = document.getElementById('updateGameModal');
+            if (modal) modal.remove();
+        }
+
+        function submitUpdateGame(e, gameId) {
+            e.preventDefault();
+            
+            const updateData = {
+                id: 'update-' + Date.now(),
+                gameId: gameId,
+                url: document.getElementById('updateGameUrl').value,
+                note: document.getElementById('updateGameNote').value,
+                author: currentUser.username,
+                authorId: currentUser.id,
+                submittedAt: new Date().toISOString(),
+                status: 'pending'
+            };
+            
+            const pendingUpdates = getPendingUpdates();
+            pendingUpdates.push(updateData);
+            savePendingUpdates(pendingUpdates);
+            
+            closeUpdateGameModal();
+            closeGameManageModal();
+            showGameManageModal();
+            showNotification('更新申请已提交，等待管理员审核', 'success');
+        }
+
+        function requestDeleteGame(gameId) {
+            if (!confirm('确定要申请下架这个游戏吗？需要管理员审核。')) return;
+            
+            const games = getGames();
+            const game = games.find(g => g.id === gameId);
+            if (!game) return;
+            
+            const deleteData = {
+                id: 'delete-' + Date.now(),
+                gameId: gameId,
+                gameName: game.name,
+                author: currentUser.username,
+                authorId: currentUser.id,
+                submittedAt: new Date().toISOString(),
+                status: 'pending'
+            };
+            
+            const pendingDeletes = JSON.parse(localStorage.getItem('pendingDeletes') || '[]');
+            pendingDeletes.push(deleteData);
+            localStorage.setItem('pendingDeletes', JSON.stringify(pendingDeletes));
+            
+            closeGameManageModal();
+            showGameManageModal();
+            showNotification('下架申请已提交，等待管理员审核', 'success');
+        }
+
+        function closeGameManageModal() {
+            const modal = document.getElementById('gameManageModal');
+            if (modal) modal.remove();
+        }
+
+        function toggleFavorite(gameId) {
+            let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+            const index = favorites.indexOf(gameId);
+            
+            if (index === -1) {
+                favorites.push(gameId);
+                showNotification('已收藏', 'success');
+            } else {
+                favorites.splice(index, 1);
+                showNotification('已取消收藏', 'info');
+            }
+            
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            renderGames();
+        }
+
+        function removeFavorite(gameId) {
+            let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+            favorites = favorites.filter(id => id !== gameId);
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            closeMyGamesModal();
+            showMyGamesModal();
+            showNotification('已取消收藏', 'info');
+        }
+
+        function deleteMyGame(gameId) {
+            if (!confirm('确定要下架这个游戏吗？')) return;
+            
+            let games = getGames();
+            games = games.filter(g => g.id !== gameId);
+            saveGames(games);
+            
+            closeGameManageModal();
+            showGameManageModal();
+            showNotification('游戏已下架', 'success');
+            renderGames();
+        }
+
+        function updateUnreadCount() {
+            if (!currentUser) return;
+            const messages = getMessages();
+            const unread = messages.filter(m => m.to === currentUser.id && !m.read).length;
+            document.getElementById('unreadCount').textContent = unread;
+        }
+
+        function openAuthModal(type) {
+            document.getElementById('authModal').classList.add('active');
+            if (type === 'login') {
+                document.getElementById('authTitle').textContent = '🔐 登录';
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('forgotForm').style.display = 'none';
+            } else if (type === 'register') {
+                document.getElementById('authTitle').textContent = '📝 注册';
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'block';
+                document.getElementById('forgotForm').style.display = 'none';
+            } else if (type === 'forgot') {
+                document.getElementById('authTitle').textContent = '🔑 找回密码';
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('forgotForm').style.display = 'block';
+            }
+        }
+
+        function handleForgotPassword(e) {
+            e.preventDefault();
+            const username = document.getElementById('forgotUsername').value.trim();
+            const email = document.getElementById('forgotEmail').value.trim();
+            const newPassword = document.getElementById('newPassword').value;
+            const newPasswordConfirm = document.getElementById('newPasswordConfirm').value;
+            
+            if (newPassword !== newPasswordConfirm) {
+                showNotification('两次密码不一致', 'error');
+                return;
+            }
+            
+            const pwdValidation = validatePassword(newPassword);
+            if (!pwdValidation.valid) {
+                showNotification(pwdValidation.message, 'error');
+                return;
+            }
+            
+            const users = getUsers();
+            const userIndex = users.findIndex(u => 
+                u.username.toLowerCase() === username.toLowerCase() && 
+                u.email.toLowerCase() === email.toLowerCase()
+            );
+            
+            if (userIndex === -1) {
+                showNotification('用户名或邮箱不正确', 'error');
+                return;
+            }
+            
+            users[userIndex].password = newPassword;
+            saveUsers(users);
+            
+            closeAuthModal();
+            showNotification('密码重置成功！请使用新密码登录', 'success');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.remove('active');
+            document.getElementById('loginForm').reset();
+            document.getElementById('registerForm').reset();
+            document.getElementById('forgotForm').reset();
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            const users = getUsers();
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                isAdmin = user.isAdmin;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                closeAuthModal();
+                showNotification('登录成功！', 'success');
+                updateUIForLoggedIn();
+                renderGames();
+            } else {
+                showNotification('用户名或密码错误', 'error');
+            }
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirm = document.getElementById('regConfirm').value;
+            
+            if (username.length < 3 || username.length > 20) {
+                showNotification('用户名需要3-20个字符', 'error');
+                return;
+            }
+            
+            const users = getUsers();
+            if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) {
+                showNotification('用户名已存在，请更换', 'error');
+                return;
+            }
+            
+            if (password !== confirm) {
+                showNotification('两次密码不一致', 'error');
+                return;
+            }
+            
+            const pwdValidation = validatePassword(password);
+            if (!pwdValidation.valid) {
+                showNotification(pwdValidation.message, 'error');
+                return;
+            }
+            
+            const newUser = {
+                id: 'user-' + Date.now(),
+                username,
+                email,
+                password,
+                isAdmin: false,
+                createdAt: new Date().toISOString()
+            };
+            
+            users.push(newUser);
+            saveUsers(users);
+            
+            currentUser = newUser;
+            localStorage.setItem('currentUser', JSON.stringify(newUser));
+            closeAuthModal();
+            showNotification('注册成功！', 'success');
+            updateUIForLoggedIn();
+        }
+
+        function logout() {
+            currentUser = null;
+            isAdmin = false;
+            localStorage.removeItem('currentUser');
+            showNotification('已退出登录', 'info');
+            updateUIForLoggedOut();
+            renderGames();
+        }
+
+        let currentCoverData = null;
+
+        function previewCover(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentCoverData = e.target.result;
+                    document.getElementById('coverPreview').innerHTML = `<img src="${currentCoverData}" alt="封面预览">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateCoverPreview() {
+            const icon = document.getElementById('gameIcon').value;
+            document.getElementById('coverPreview').innerHTML = `<span id="coverPreviewIcon">${icon}</span>`;
+            currentCoverData = null;
+        }
+
+        let currentCoverDataProfile = null;
+
+        function openProfileModal() {
+            if (!currentUser) return;
+            document.getElementById('profileModal').classList.add('active');
+            document.getElementById('settingsUsername').value = currentUser.username;
+            document.getElementById('settingsEmail').value = currentUser.email || '';
+            document.getElementById('settingsCurrentPassword').value = '';
+            document.getElementById('settingsNewPassword').value = '';
+            document.getElementById('settingsConfirmPassword').value = '';
+            updateFollowCounts();
+            renderFollowingList();
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.remove('active');
+        }
+
+        function switchProfileTab(tab) {
+            const mainTabs = document.querySelectorAll('#profileModal > .modal-content > .tabs .tab');
+            mainTabs.forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const tabContents = ['uploadTab', 'mygamesTab', 'settingsTab', 'messagesTab', 'adminTabContent'];
+            tabContents.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('active');
+            });
+            
+            if (tab === 'admin') {
+                const adminTabContent = document.getElementById('adminTabContent');
+                if (adminTabContent) adminTabContent.classList.add('active');
+            } else {
+                const targetTab = document.getElementById(tab + 'Tab');
+                if (targetTab) targetTab.classList.add('active');
+            }
+        }
+
+        function switchMsgTabProfile(tab) {
+            const messagesTab = document.getElementById('messagesTab');
+            messagesTab.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            messagesTab.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            if (tab === 'inbox') {
+                document.getElementById('inboxTabProfile').classList.add('active');
+                renderInboxProfile();
+            } else {
+                document.getElementById('sendTabProfile').classList.add('active');
+            }
+        }
+
+        function switchAdminTabProfile(tab) {
+            const adminTabContent = document.getElementById('adminTabContent');
+            adminTabContent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            adminTabContent.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + 'TabProfile').classList.add('active');
+        }
+
+        function previewCoverProfile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentCoverDataProfile = e.target.result;
+                    document.getElementById('coverPreviewProfile').innerHTML = `<img src="${currentCoverDataProfile}" alt="封面预览">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateCoverPreviewProfile() {
+            const icon = document.getElementById('gameIconProfile').value;
+            document.getElementById('coverPreviewProfile').innerHTML = `<span>${icon}</span>`;
+            currentCoverDataProfile = null;
+        }
+
+        let selectedGameFile = null;
+
+        function handleGameFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processGameFile(file);
+            }
+        }
+
+        function processGameFile(file) {
+            if (!file.name.match(/\.(html|htm)$/i)) {
+                showNotification('请选择HTML文件', 'error');
+                return;
+            }
+            
+            selectedGameFile = file;
+            document.getElementById('selectedFileName').textContent = file.name;
+            document.getElementById('gameUrlProfile').value = file.name;
+            showNotification(`已选择文件: ${file.name}`, 'success');
+        }
+
+        function initDragDrop() {
+            const dropZone = document.getElementById('fileDropZone');
+            if (!dropZone) return;
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    processGameFile(files[0]);
+                }
+            });
+        }
+
+        function handleUpload() {
+            if (!currentUser) {
+                showNotification('请先登录', 'error');
+                openAuthModal('login');
+                return;
+            }
+            document.getElementById('updateGameId').value = '';
+            document.getElementById('uploadModalTitle').textContent = '📤 申请上传游戏';
+            document.getElementById('uploadSubmitBtn').textContent = '提交申请';
+            document.getElementById('uploadForm').reset();
+            document.getElementById('coverPreview').innerHTML = '<span id="coverPreviewIcon">🎮</span>';
+            currentCoverData = null;
+            document.getElementById('uploadModal').classList.add('active');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('active');
+            document.getElementById('uploadForm').reset();
+            document.getElementById('updateGameId').value = '';
+            currentCoverData = null;
+        }
+
+        function submitGame(e) {
+            e.preventDefault();
+            
+            const updateGameId = document.getElementById('updateGameIdProfile').value;
+            const gameData = {
+                name: document.getElementById('gameNameProfile').value,
+                description: document.getElementById('gameDescProfile').value,
+                intro: document.getElementById('gameIntroProfile').value,
+                url: document.getElementById('gameUrlProfile').value,
+                icon: document.getElementById('gameIconProfile').value,
+                cover: currentCoverDataProfile,
+                tags: document.getElementById('gameTagsProfile').value.split(',').map(t => t.trim()).filter(t => t),
+            };
+            
+            if (gameData.tags.length === 0) gameData.tags = ['游戏'];
+
+            if (updateGameId) {
+                if (isAdmin) {
+                    const games = getGames();
+                    const gameIndex = games.findIndex(g => g.id === updateGameId);
+                    if (gameIndex !== -1) {
+                        games[gameIndex] = {
+                            ...games[gameIndex],
+                            ...gameData,
+                            version: (games[gameIndex].version || 1) + 1,
+                            updatedAt: new Date().toISOString()
+                        };
+                        saveGames(games);
+                        showNotification('游戏更新成功！', 'success');
+                        renderGames();
+                    }
+                } else {
+                    const pendingUpdates = getPendingUpdates();
+                    pendingUpdates.push({
+                        id: 'update-' + Date.now(),
+                        gameId: updateGameId,
+                        ...gameData,
+                        author: currentUser.username,
+                        authorId: currentUser.id,
+                        status: 'pending',
+                        submittedAt: new Date().toISOString()
+                    });
+                    savePendingUpdates(pendingUpdates);
+                    showNotification('更新申请已提交，等待审核', 'success');
+                }
+                document.getElementById('uploadFormProfile').reset();
+                document.getElementById('coverPreviewProfile').innerHTML = '<span>🎮</span>';
+                currentCoverDataProfile = null;
+                renderMyUploadsProfile();
+            } else {
+                const game = {
+                    id: 'game-' + Date.now(),
+                    ...gameData,
+                    author: currentUser.username,
+                    authorId: currentUser.id,
+                    status: isAdmin ? 'approved' : 'pending',
+                    submittedAt: new Date().toISOString(),
+                    comments: [],
+                    plays: 0,
+                    version: 1
+                };
+
+                if (isAdmin) {
+                    const games = getGames();
+                    games.push(game);
+                    saveGames(games);
+                    showNotification('游戏上传成功！', 'success');
+                    renderGames();
+                } else {
+                    const pending = getPendingGames();
+                    pending.push(game);
+                    savePendingGames(pending);
+                    showNotification('申请已提交，等待审核', 'success');
+                }
+
+                document.getElementById('uploadFormProfile').reset();
+                document.getElementById('coverPreviewProfile').innerHTML = '<span>🎮</span>';
+                currentCoverDataProfile = null;
+                renderMyUploadsProfile();
+            }
+        }
+
+        function openUpdateModal(gameId) {
+            const games = getGames();
+            const game = games.find(g => g.id === gameId);
+            if (!game) return;
+            
+            document.getElementById('updateGameId').value = gameId;
+            document.getElementById('gameName').value = game.name;
+            document.getElementById('gameDesc').value = game.description;
+            document.getElementById('gameIntro').value = game.intro || '';
+            document.getElementById('gameUrl').value = game.url;
+            document.getElementById('gameIcon').value = game.icon;
+            document.getElementById('gameTags').value = game.tags.join(', ');
+            if (game.cover) {
+                currentCoverData = game.cover;
+                document.getElementById('coverPreview').innerHTML = `<img src="${game.cover}" alt="封面预览">`;
+            } else {
+                currentCoverData = null;
+                document.getElementById('coverPreview').innerHTML = `<span id="coverPreviewIcon">${game.icon}</span>`;
+            }
+            document.getElementById('uploadModalTitle').textContent = '🔄 申请更新游戏';
+            document.getElementById('uploadSubmitBtn').textContent = '提交更新申请';
+            document.getElementById('uploadModal').classList.add('active');
+        }
+
+        let searchTimeout = null;
+
+        function openSearchPage() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+            
+            document.getElementById('homePage').style.display = 'none';
+            document.getElementById('searchPage').style.display = 'block';
+            
+            renderSearchResults(query);
+        }
+
+        function backToHome() {
+            document.getElementById('searchPage').style.display = 'none';
+            document.getElementById('homePage').style.display = 'block';
+            document.getElementById('searchInput').value = '';
+        }
+
+        function renderSearchResults(query) {
+            const games = getGames();
+            const users = getUsers();
+            const q = query.toLowerCase().trim();
+            
+            const matchedGames = games.filter(g => 
+                g.name.toLowerCase().includes(q) || 
+                g.description.toLowerCase().includes(q) ||
+                g.tags.some(t => t.toLowerCase().includes(q))
+            );
+            
+            const matchedUsers = users.filter(u => 
+                u.username.toLowerCase().includes(q)
+            );
+            
+            const container = document.getElementById('searchResultsContainer');
+            
+            if (matchedGames.length === 0 && matchedUsers.length === 0) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div><p>未找到 "${query}" 相关结果</p></div>`;
+                return;
+            }
+            
+            let html = '';
+            
+            if (matchedGames.length > 0) {
+                html += `<h3 style="color: #4dd0e1; margin-bottom: 15px;">游戏 (${matchedGames.length})</h3>`;
+                html += `<div class="games-grid" style="margin-bottom: 30px;">`;
+                matchedGames.forEach(game => {
+                    const coverHtml = game.cover 
+                        ? `<img src="${game.cover}" alt="${game.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+                        : `<span class="game-icon">${game.icon}</span>`;
+                    
+                    const gameUrl = game.url.startsWith('http') ? game.url : game.url;
+                    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+                    const isFavorite = favorites.includes(game.id);
+                    
+                    const follows = getFollows();
+                    const isFollowing = currentUser && follows.some(f => f.followerId === currentUser.id && f.followingId === game.authorId);
+                    const canFollow = currentUser && game.authorId !== currentUser.id;
+                    const followBtn = canFollow 
+                        ? `<button class="follow-btn ${isFollowing ? 'following' : ''}" onclick="toggleFollow('${game.authorId}', event)">${isFollowing ? '✓ 已关注' : '+ 关注'}</button>`
+                        : '';
+                    
+                    html += `
+                    <div class="game-card">
+                        <div class="game-preview">${coverHtml}</div>
+                        <div class="game-info">
+                            <h3 class="game-title">${highlightMatch(game.name, query)}${game.isAdminGame ? '<span class="admin-badge">官方</span>' : ''}</h3>
+                            <p class="game-author">作者：${highlightMatch(game.author, query)} ${followBtn}</p>
+                            <p class="game-description">${highlightMatch(game.description, query)}</p>
+                            <div class="game-tags">${game.tags.map(tag => `<span class="tag">${highlightMatch(tag, query)}</span>`).join('')}</div>
+                            <div class="game-actions">
+                                <a href="${gameUrl}" class="play-btn" target="_blank" onclick="incrementPlays('${game.id}')">▶ 开始</a>
+                                <button class="favorite-btn ${isFavorite ? 'favorited' : ''}" onclick="toggleFavorite('${game.id}')">${isFavorite ? '⭐' : '☆'}</button>
+                            </div>
+                            <div class="game-stats"><span>🎮 ${game.plays || 0} 次游玩</span></div>
+                        </div>
+                    </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+            
+            if (matchedUsers.length > 0) {
+                html += `<h3 style="color: #4dd0e1; margin-bottom: 15px;">用户 (${matchedUsers.length})</h3>`;
+                html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">`;
+                matchedUsers.forEach(user => {
+                    const follows = getFollows();
+                    const isFollowing = currentUser && follows.some(f => f.followerId === currentUser.id && f.followingId === user.id);
+                    const canFollow = currentUser && user.id !== currentUser.id;
+                    
+                    const userGames = getGames().filter(g => g.authorId === user.id);
+                    
+                    html += `
+                    <div class="game-card" style="padding: 20px;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">👤</div>
+                            <div style="flex: 1;">
+                                <div style="color: #fff; font-size: 1.1rem; font-weight: bold;">${highlightMatch(user.username, query)}</div>
+                                <div style="color: #b0bec5; font-size: 0.85rem;">${user.isAdmin ? '管理员' : '用户'} · ${userGames.length} 个游戏</div>
+                            </div>
+                            ${canFollow ? `<button class="follow-btn ${isFollowing ? 'following' : ''}" onclick="toggleFollow('${user.id}', event)">${isFollowing ? '✓ 已关注' : '+ 关注'}</button>` : ''}
+                        </div>
+                    </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function highlightMatch(text, query) {
+            if (!query) return text;
+            const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, '<span style="color: #4dd0e1; font-weight: bold;">$1</span>');
+        }
+
+        function renderGames() {
+            const games = getGames();
+            const grid = document.getElementById('gamesGrid');
+            
+            if (games.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎮</div><p>暂无游戏</p></div>`;
+                return;
+            }
+
+            grid.innerHTML = games.map(game => {
+                const isOwner = currentUser && game.authorId === currentUser.id;
+                const showUpdateBtn = isOwner;
+                const coverHtml = game.cover 
+                    ? `<img src="${game.cover}" alt="${game.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+                    : `<span class="game-icon">${game.icon}</span>`;
+                
+                const follows = getFollows();
+                const isFollowing = currentUser && follows.some(f => f.followerId === currentUser.id && f.followingId === game.authorId);
+                const canFollow = currentUser && game.authorId !== currentUser.id;
+                const followBtn = canFollow 
+                    ? `<button class="follow-btn ${isFollowing ? 'following' : ''}" onclick="toggleFollow('${game.authorId}', event)">${isFollowing ? '✓ 已关注' : '+ 关注'}</button>`
+                    : '';
+                
+                const gameUrl = game.url.startsWith('http') ? game.url : (window.location.pathname.includes('/nope/') ? `/nope/${game.url}` : game.url);
+                
+                const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+                const isFavorite = favorites.includes(game.id);
+                
+                return `
+                <div class="game-card">
+                    <div class="game-preview">
+                        ${coverHtml}
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">${game.name}${game.isAdminGame ? '<span class="admin-badge">官方</span>' : ''}</h3>
+                        <p class="game-author">作者：${game.author} ${followBtn}</p>
+                        <p class="game-description">${game.description}</p>
+                        <div class="game-tags">
+                            ${game.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                        <div class="game-actions">
+                            <a href="${gameUrl}" class="play-btn" target="_blank" onclick="incrementPlays('${game.id}')">▶ 开始</a>
+                            <button class="comment-btn" onclick="openCommentModal('${game.id}')">${game.comments ? game.comments.length : 0}</button>
+                            <button class="favorite-btn ${isFavorite ? 'favorited' : ''}" onclick="toggleFavorite('${game.id}')">${isFavorite ? '⭐' : '☆'}</button>
+                        </div>
+                        <div class="game-stats">
+                            <span>${game.plays || 0} 次游玩</span>
+                            <span>${game.comments ? game.comments.length : 0} 条评论</span>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function toggleFollow(authorId, event) {
+            event.stopPropagation();
+            if (!currentUser) {
+                showNotification('请先登录', 'error');
+                openAuthModal('login');
+                return;
+            }
+            
+            const follows = getFollows();
+            const existingIndex = follows.findIndex(f => f.followerId === currentUser.id && f.followingId === authorId);
+            
+            if (existingIndex !== -1) {
+                follows.splice(existingIndex, 1);
+                saveFollows(follows);
+                showNotification('已取消关注', 'info');
+            } else {
+                follows.push({
+                    id: 'follow-' + Date.now(),
+                    followerId: currentUser.id,
+                    followerName: currentUser.username,
+                    followingId: authorId,
+                    followingName: getUsers().find(u => u.id === authorId)?.username || '未知用户',
+                    createdAt: new Date().toISOString()
+                });
+                saveFollows(follows);
+                showNotification('关注成功', 'success');
+                
+                addActivity(authorId, 'follow', `${currentUser.username} 关注了你`);
+            }
+            
+            renderGames();
+        }
+
+        function addActivity(userId, type, content) {
+            const activities = getActivities();
+            activities.push({
+                id: 'activity-' + Date.now(),
+                userId: userId,
+                type: type,
+                content: content,
+                time: new Date().toISOString(),
+                read: false
+            });
+            saveActivities(activities);
+        }
+
+        function incrementPlays(gameId) {
+            const games = getGames();
+            const game = games.find(g => g.id === gameId);
+            if (game) {
+                game.plays = (game.plays || 0) + 1;
+                saveGames(games);
+            }
+        }
+
+        function openCommentModal(gameId) {
+            currentGameId = gameId;
+            const games = getGames();
+            const game = games.find(g => g.id === gameId);
+            
+            document.getElementById('commentGameTitle').textContent = `${game.name} - 评论与建议`;
+            renderComments(game);
+            document.getElementById('commentModal').classList.add('active');
+        }
+
+        function closeCommentModal() {
+            document.getElementById('commentModal').classList.remove('active');
+            document.getElementById('commentInput').value = '';
+            currentGameId = null;
+        }
+
+        function renderComments(game) {
+            const list = document.getElementById('commentsList');
+            if (!game.comments || game.comments.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无评论，快来抢沙发吧！</p></div>`;
+                return;
+            }
+            
+            list.innerHTML = game.comments.map(c => `
+                <div class="comment-item">
+                    <div class="comment-header">
+                        <span class="comment-author">${c.author}</span>
+                        <span class="comment-time">${formatTime(c.time)}</span>
+                    </div>
+                    <div class="comment-text">${c.text}</div>
+                </div>
+            `).join('');
+        }
+
+        function submitComment() {
+            const input = document.getElementById('commentInput');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            const games = getGames();
+            const game = games.find(g => g.id === currentGameId);
+            if (!game.comments) game.comments = [];
+            
+            game.comments.push({
+                author: currentUser ? currentUser.username : '游客',
+                authorId: currentUser ? currentUser.id : 'guest',
+                text,
+                time: new Date().toISOString()
+            });
+            
+            saveGames(games);
+            renderComments(game);
+            input.value = '';
+            showNotification('评论成功！', 'success');
+            renderGames();
+        }
+
+        function switchMyGamesTab(tab) {
+            const mygamesTab = document.getElementById('mygamesTab');
+            mygamesTab.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            mygamesTab.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + 'GamesTab').classList.add('active');
+            
+            if (tab === 'published') renderMyPublishedGames();
+        }
+
+        function renderMyPublishedGames() {
+            if (!currentUser) return;
+            
+            const games = getGames().filter(g => g.authorId === currentUser.id);
+            const list = document.getElementById('myPublishedGamesList');
+            
+            if (games.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无已发布的游戏</p></div>`;
+                return;
+            }
+            
+            list.innerHTML = games.map(game => {
+                const gameUrl = game.url.startsWith('http') ? game.url : (window.location.pathname.includes('/nope/') ? `/nope/${game.url}` : game.url);
+                return `
+                <div class="upload-item">
+                    <h4>${game.icon} ${game.name}</h4>
+                    <p><strong>游玩次数：</strong>${game.plays || 0} | <strong>评论：</strong>${game.comments ? game.comments.length : 0}</p>
+                    <p>${game.description}</p>
+                    <div class="pending-actions" style="margin-top: 10px;">
+                        <a href="${gameUrl}" target="_blank" class="play-btn" style="padding: 6px 15px; font-size: 0.8rem;">试玩</a>
+                        <button class="update-btn" onclick="openUpdateModalProfile('${game.id}')" style="padding: 6px 15px; font-size: 0.8rem;">🔄 更新</button>
+                        <button class="reject-btn" onclick="removeMyGame('${game.id}')" style="padding: 6px 15px; font-size: 0.8rem;">🗑️ 下架</button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function openUpdateModalProfile(gameId) {
+            const games = getGames();
+            const game = games.find(g => g.id === gameId);
+            if (!game) return;
+            
+            switchProfileTab('upload');
+            
+            document.getElementById('updateGameIdProfile').value = gameId;
+            document.getElementById('gameNameProfile').value = game.name;
+            document.getElementById('gameDescProfile').value = game.description;
+            document.getElementById('gameIntroProfile').value = game.intro || '';
+            document.getElementById('gameUrlProfile').value = game.url;
+            document.getElementById('gameIconProfile').value = game.icon;
+            document.getElementById('gameTagsProfile').value = game.tags.join(', ');
+            if (game.cover) {
+                currentCoverDataProfile = game.cover;
+                document.getElementById('coverPreviewProfile').innerHTML = `<img src="${game.cover}" alt="封面预览">`;
+            } else {
+                currentCoverDataProfile = null;
+                document.getElementById('coverPreviewProfile').innerHTML = `<span>${game.icon}</span>`;
+            }
+        }
+
+        function removeMyGame(gameId) {
+            if (!confirm('确定要下架这个游戏吗？')) return;
+            
+            let games = getGames();
+            games = games.filter(g => g.id !== gameId);
+            saveGames(games);
+            
+            renderMyPublishedGames();
+            renderGames();
+            showNotification('游戏已下架', 'info');
+        }
+
+        function renderMyUploadsProfile() {
+            if (!currentUser) return;
+            
+            const pending = getPendingGames();
+            const myUploads = pending.filter(g => g.authorId === currentUser.id);
+            const pendingUpdates = getPendingUpdates();
+            const myUpdates = pendingUpdates.filter(u => u.authorId === currentUser.id);
+            const list = document.getElementById('myUploadsListProfile');
+            
+            if (myUploads.length === 0 && myUpdates.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无上传申请</p></div>`;
+                return;
+            }
+            
+            let html = '';
+            
+            myUploads.forEach(game => {
+                html += `
+                    <div class="upload-item">
+                        <h4>${game.icon} ${game.name}</h4>
+                        <span class="status ${game.status || 'pending'}">${getStatusText(game.status)}</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${getProgress(game.status)}%"></div>
+                        </div>
+                        <p class="progress-status">${getProgressText(game.status)}</p>
+                    </div>
+                `;
+            });
+            
+            myUpdates.forEach(update => {
+                html += `
+                    <div class="upload-item">
+                        <h4>${update.icon} ${update.name} <span class="update-type">更新</span></h4>
+                        <span class="status ${update.status === 'pending' ? 'update_pending' : update.status}">${getUpdateStatusText(update.status)}</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${getProgress(update.status)}%"></div>
+                        </div>
+                        <p class="progress-status">${getUpdateProgressText(update.status)}</p>
+                    </div>
+                `;
+            });
+            
+            list.innerHTML = html;
+        }
+
+        function renderInboxProfile() {
+            if (!currentUser) return;
+            
+            const messages = getMessages().filter(m => m.to === currentUser.id);
+            const list = document.getElementById('inboxListProfile');
+            
+            if (messages.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无私信</p></div>`;
+                return;
+            }
+            
+            messages.forEach(m => m.read = true);
+            saveMessages(getMessages());
+            updateUnreadCount();
+            
+            list.innerHTML = messages.reverse().map(m => `
+                <div class="message-item">
+                    <div class="message-header">
+                        <span class="message-from">来自：${m.fromName}</span>
+                        <span class="message-time">${formatTime(m.time)}</span>
+                    </div>
+                    <div class="message-text">${m.text}</div>
+                    <button class="message-btn" style="margin-top: 8px; padding: 5px 12px; font-size: 0.8rem;" onclick="replyMessage('${m.from}', '${m.fromName}')">↩ 回复</button>
+                </div>
+            `).join('');
+        }
+
+        function replyMessage(userId, userName) {
+            document.getElementById('msgToProfile').value = userName;
+            document.getElementById('msgToIdProfile').value = userId;
+            switchMsgTabProfile('send');
+        }
+
+        function switchSettingsTab(tab) {
+            const profileModal = document.getElementById('profileModal');
+            profileModal.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+            profileModal.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+            
+            if (tab === 'following') renderFollowingList();
+            if (tab === 'followers') renderFollowersList();
+        }
+
+        function renderFollowingList() {
+            if (!currentUser) return;
+            const follows = getFollows();
+            const following = follows.filter(f => f.followerId === currentUser.id);
+            const list = document.getElementById('followingList');
+            
+            if (following.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无关注</p></div>`;
+                return;
+            }
+            
+            list.innerHTML = following.map(f => `
+                <div class="user-item">
+                    <div class="user-item-info">
+                        <div class="user-item-avatar">👤</div>
+                        <div>
+                            <div class="user-item-name">${f.followingName}</div>
+                            <div class="user-item-time">关注于 ${formatTime(f.createdAt)}</div>
+                        </div>
+                    </div>
+                    <button class="follow-btn following" onclick="unfollowUser('${f.followingId}')">取消关注</button>
+                </div>
+            `).join('');
+        }
+
+        function renderFollowersList() {
+            if (!currentUser) return;
+            const follows = getFollows();
+            const followers = follows.filter(f => f.followingId === currentUser.id);
+            const list = document.getElementById('followersList');
+            
+            if (followers.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无粉丝</p></div>`;
+                return;
+            }
+            
+            list.innerHTML = followers.map(f => `
+                <div class="user-item">
+                    <div class="user-item-info">
+                        <div class="user-item-avatar">👤</div>
+                        <div>
+                            <div class="user-item-name">${f.followerName}</div>
+                            <div class="user-item-time">关注于 ${formatTime(f.createdAt)}</div>
+                        </div>
+                    </div>
+                    <button class="message-btn" onclick="sendPrivateMessage('${f.followerId}')">私信</button>
+                </div>
+            `).join('');
+        }
+
+        function unfollowUser(userId) {
+            const follows = getFollows();
+            const index = follows.findIndex(f => f.followerId === currentUser.id && f.followingId === userId);
+            if (index !== -1) {
+                follows.splice(index, 1);
+                saveFollows(follows);
+                showNotification('已取消关注', 'info');
+                renderFollowingList();
+                updateFollowCounts();
+                renderGames();
+            }
+        }
+
+        function sendPrivateMessage(userId) {
+            const users = getUsers();
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+            
+            document.getElementById('msgToProfile').value = user.username;
+            document.getElementById('msgToIdProfile').value = userId;
+            switchMsgTabProfile('send');
+        }
+
+        function updateFollowCounts() {
+            if (!currentUser) return;
+            const follows = getFollows();
+            const following = follows.filter(f => f.followerId === currentUser.id).length;
+            const followers = follows.filter(f => f.followingId === currentUser.id).length;
+            
+            const followingCountTab = document.getElementById('followingCountTab');
+            const followersCountTab = document.getElementById('followersCountTab');
+            if (followingCountTab) followingCountTab.textContent = following;
+            if (followersCountTab) followersCountTab.textContent = followers;
+        }
+
+        function updateUserInfo(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            
+            const currentPassword = document.getElementById('settingsCurrentPassword').value;
+            const newPassword = document.getElementById('settingsNewPassword').value;
+            const confirmPassword = document.getElementById('settingsConfirmPassword').value;
+            const newEmail = document.getElementById('settingsEmail').value;
+            
+            const users = getUsers();
+            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            if (userIndex === -1) return;
+            
+            if (currentPassword && currentPassword !== users[userIndex].password) {
+                showNotification('当前密码错误', 'error');
+                return;
+            }
+            
+            if (newPassword) {
+                if (!currentPassword) {
+                    showNotification('请输入当前密码以修改密码', 'error');
+                    return;
+                }
+                if (newPassword !== confirmPassword) {
+                    showNotification('两次新密码不一致', 'error');
+                    return;
+                }
+                const pwdValidation = validatePassword(newPassword);
+                if (!pwdValidation.valid) {
+                    showNotification(pwdValidation.message, 'error');
+                    return;
+                }
+                users[userIndex].password = newPassword;
+            }
+            
+            users[userIndex].email = newEmail;
+            saveUsers(users);
+            
+            currentUser.email = newEmail;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            document.getElementById('settingsCurrentPassword').value = '';
+            document.getElementById('settingsNewPassword').value = '';
+            document.getElementById('settingsConfirmPassword').value = '';
+            
+            showNotification('个人信息已更新', 'success');
+        }
+
+        function deleteAccount() {
+            if (!currentUser) return;
+            if (currentUser.username === 'admin') {
+                showNotification('管理员账号不能注销', 'error');
+                return;
+            }
+            
+            const confirm1 = confirm('确定要注销账号吗？此操作不可恢复！');
+            if (!confirm1) return;
+            
+            const confirm2 = confirm('再次确认：所有数据将被永久删除！');
+            if (!confirm2) return;
+            
+            const password = prompt('请输入密码确认注销：');
+            if (!password) return;
+            
+            const users = getUsers();
+            const user = users.find(u => u.id === currentUser.id);
+            
+            if (!user || user.password !== password) {
+                showNotification('密码错误', 'error');
+                return;
+            }
+            
+            let games = getGames();
+            games = games.filter(g => g.authorId !== currentUser.id);
+            saveGames(games);
+            
+            const newUsers = users.filter(u => u.id !== currentUser.id);
+            saveUsers(newUsers);
+            
+            showNotification('账号已注销', 'info');
+            logout();
+        }
+
+        function sendMessageProfile(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            
+            const text = document.getElementById('msgContentProfile').value;
+            const toId = document.getElementById('msgToIdProfile').value;
+            const toName = document.getElementById('msgToProfile').value;
+            const messages = getMessages();
+            
+            messages.push({
+                id: 'msg-' + Date.now(),
+                from: currentUser.id,
+                fromName: currentUser.username,
+                to: toId,
+                toName: toName,
+                text,
+                time: new Date().toISOString(),
+                read: false
+            });
+            
+            saveMessages(messages);
+            document.getElementById('msgContentProfile').value = '';
+            showNotification(`私信已发送给 ${toName}`, 'success');
+        }
+
+        function renderAdminPendingProfile() {
+            const pending = getPendingGames().filter(g => g.status === 'pending' || !g.status);
+            const list = document.getElementById('adminPendingListProfile');
+            
+            if (pending.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无待审核的新游戏申请</p></div>`;
+                return;
+            }
+
+            list.innerHTML = pending.map(game => `
+                <div class="pending-card">
+                    <h4>${game.icon} ${game.name}</h4>
+                    <p><strong>作者：</strong>${game.author} | <strong>提交时间：</strong>${formatTime(game.submittedAt)}</p>
+                    <p><strong>描述：</strong>${game.description}</p>
+                    <p><strong>简介：</strong>${game.intro || '未填写'}</p>
+                    <p><strong>链接：</strong>${game.url}</p>
+                    <div class="pending-actions">
+                        <a href="${game.url}" target="_blank" class="play-btn" style="padding: 8px 18px; font-size: 0.85rem;">试玩游戏</a>
+                        <button class="approve-btn" onclick="approveGame('${game.id}')">✓ 批准</button>
+                        <button class="reject-btn" onclick="rejectGame('${game.id}')">✗ 拒绝</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAdminGamesProfile() {
+            const games = getGames();
+            const list = document.getElementById('adminGamesListProfile');
+            
+            if (games.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无游戏</p></div>`;
+                return;
+            }
+
+            list.innerHTML = games.map(game => `
+                <div class="upload-item">
+                    <h4>${game.icon} ${game.name} ${game.isAdminGame ? '<span class="admin-badge">官方</span>' : ''}</h4>
+                    <p><strong>作者：</strong>${game.author} | <strong>游玩次数：</strong>${game.plays || 0}</p>
+                    <p>${game.description}</p>
+                    <div class="pending-actions" style="margin-top: 10px;">
+                        <a href="${game.url}" target="_blank" class="play-btn" style="padding: 6px 15px; font-size: 0.8rem;">试玩</a>
+                        <button class="reject-btn" onclick="removeGame('${game.id}')" style="padding: 6px 15px; font-size: 0.8rem;">🗑️ 下架</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderUsersProfile() {
+            const users = getUsers();
+            const list = document.getElementById('usersListProfile');
+            
+            list.innerHTML = users.map(u => `
+                <div class="upload-item">
+                    <h4>${u.isAdmin ? '👑' : '👤'} ${u.username}${u.isAdmin ? '<span class="admin-badge">管理员</span>' : ''}</h4>
+                    <p>${u.email} | 注册时间：${formatTime(u.createdAt)}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderMyUploads() {
+            if (!currentUser) return;
+            
+            const pending = getPendingGames();
+            const myUploads = pending.filter(g => g.authorId === currentUser.id);
+            const pendingUpdates = getPendingUpdates();
+            const myUpdates = pendingUpdates.filter(u => u.authorId === currentUser.id);
+            const list = document.getElementById('myUploadsList');
+            
+            if (myUploads.length === 0 && myUpdates.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无上传申请</p></div>`;
+                return;
+            }
+            
+            let html = '';
+            
+            myUploads.forEach(game => {
+                html += `
+                    <div class="upload-item">
+                        <h4>${game.icon} ${game.name}</h4>
+                        <span class="status ${game.status || 'pending'}">${getStatusText(game.status)}</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${getProgress(game.status)}%"></div>
+                        </div>
+                        <p class="progress-status">${getProgressText(game.status)}</p>
+                    </div>
+                `;
+            });
+            
+            myUpdates.forEach(update => {
+                html += `
+                    <div class="upload-item">
+                        <h4>${update.icon} ${update.name} <span class="update-type">更新</span></h4>
+                        <span class="status ${update.status === 'pending' ? 'update_pending' : update.status}">${getUpdateStatusText(update.status)}</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${getProgress(update.status)}%"></div>
+                        </div>
+                        <p class="progress-status">${getUpdateProgressText(update.status)}</p>
+                    </div>
+                `;
+            });
+            
+            list.innerHTML = html;
+        }
+
+        function getStatusText(status) {
+            switch(status) {
+                case 'approved': return '已通过';
+                case 'rejected': return '已拒绝';
+                default: return '审核中';
+            }
+        }
+
+        function getUpdateStatusText(status) {
+            switch(status) {
+                case 'approved': return '更新已通过';
+                case 'rejected': return '更新已拒绝';
+                default: return '更新审核中';
+            }
+        }
+
+        function getProgress(status) {
+            switch(status) {
+                case 'approved': return 100;
+                case 'rejected': return 100;
+                default: return 50;
+            }
+        }
+
+        function getProgressText(status) {
+            switch(status) {
+                case 'approved': return '✅ 您的游戏已通过审核并发布！';
+                case 'rejected': return '❌ 很抱歉，您的游戏未通过审核';
+                default: return '⏳ 您的游戏正在审核中，请耐心等待...';
+            }
+        }
+
+        function getUpdateProgressText(status) {
+            switch(status) {
+                case 'approved': return '✅ 您的更新已通过审核并生效！';
+                case 'rejected': return '❌ 很抱歉，您的更新未通过审核';
+                default: return '⏳ 您的更新正在审核中，请耐心等待...';
+            }
+        }
+
+        function renderPendingGames() {
+            const pending = getPendingGames().filter(g => g.status === 'pending' || !g.status);
+            const pendingUpdates = getPendingUpdates().filter(u => u.status === 'pending' || !u.status);
+            document.getElementById('pendingCount').textContent = pending.length + pendingUpdates.length;
+            const list = document.getElementById('pendingList');
+            
+            if (pending.length === 0) {
+                list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✅</div><p>暂无待审核的新游戏申请</p></div>`;
+                return;
+            }
+
+            list.innerHTML = pending.map(game => `
+                <div class="pending-card">
+                    <h4>${game.icon} ${game.name}</h4>
+                    <p><strong>作者：</strong>${game.author} | <strong>提交时间：</strong>${formatTime(game.submittedAt)}</p>
+                    <p><strong>描述：</strong>${game.description}</p>
+                    <p><strong>链接：</strong>${game.url}</p>
+                    <div class="pending-actions">
+                        <button class="approve-btn" onclick="approveGame('${game.id}')">✓ 批准</button>
+                        <button class="reject-btn" onclick="rejectGame('${game.id}')">✗ 拒绝</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function approveGame(gameId) {
+            try {
+                const response = await fetch(`${API_URL}/api/games/${gameId}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    await fetchGamesFromServer();
+                    renderPendingGames();
+                    renderGames();
+                    renderMyUploads();
+                    showNotification('游戏已发布！', 'success');
+                } else {
+                    const data = await response.json();
+                    showNotification(data.error || '审核失败', 'error');
+                }
+            } catch (error) {
+                const pending = getPendingGames();
+                const gameIndex = pending.findIndex(g => g.id === gameId);
+                if (gameIndex === -1) return;
+                
+                const game = pending[gameIndex];
+                game.status = 'approved';
+                savePendingGames(pending);
+                
+                const games = getGames();
+                games.push({...game, status: 'approved'});
+                saveGames(games);
+                
+                renderPendingGames();
+                renderGames();
+                renderMyUploads();
+                showNotification(`游戏"${game.name}"已发布！`, 'success');
+            }
+        }
+
+        async function rejectGame(gameId) {
+            try {
+                const response = await fetch(`${API_URL}/api/games/${gameId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    await fetchGamesFromServer();
+                    renderPendingGames();
+                    renderGames();
+                    showNotification('游戏已拒绝', 'info');
+                } else {
+                    const data = await response.json();
+                    showNotification(data.error || '操作失败', 'error');
+                }
+            } catch (error) {
+                const pending = getPendingGames();
+                const game = pending.find(g => g.id === gameId);
+                if (game) {
+                    game.status = 'rejected';
+                    savePendingGames(pending);
+                }
+                
+                renderPendingGames();
+                renderMyUploads();
+                showNotification(`已拒绝游戏"${game ? game.name : ''}"`, 'info');
+            }
+        }
+
+        function approveUpdate(updateId) {
+            const pendingUpdates = getPendingUpdates();
+            const updateIndex = pendingUpdates.findIndex(u => u.id === updateId);
+            if (updateIndex === -1) return;
+            
+            const update = pendingUpdates[updateIndex];
+            update.status = 'approved';
+            savePendingUpdates(pendingUpdates);
+            
+            const games = getGames();
+            const gameIndex = games.findIndex(g => g.id === update.gameId);
+            if (gameIndex !== -1) {
+                games[gameIndex].name = update.name;
+                games[gameIndex].description = update.description;
+                games[gameIndex].intro = update.intro;
+                games[gameIndex].url = update.url;
+                games[gameIndex].icon = update.icon;
+                games[gameIndex].cover = update.cover;
+                games[gameIndex].tags = update.tags;
+                games[gameIndex].version = (games[gameIndex].version || 1) + 1;
+                saveGames(games);
+            }
+            
+            renderAdminUpdates();
+            renderGames();
+            renderMyUploads();
+            showNotification(`更新已应用！`, 'success');
+        }
+
+        function rejectUpdate(updateId) {
+            const pendingUpdates = getPendingUpdates();
+            const update = pendingUpdates.find(u => u.id === updateId);
+            if (update) {
+                update.status = 'rejected';
+                savePendingUpdates(pendingUpdates);
+            }
+            
+            renderAdminUpdates();
+            renderMyUploads();
+            showNotification(`已拒绝更新`, 'info');
+        }
+
+        function removeGame(gameId) {
+            if (!isAdmin) return;
+            if (!confirm('确定要下架这个游戏吗？')) return;
+            
+            let games = getGames();
+            games = games.filter(g => g.id !== gameId);
+            saveGames(games);
+            
+            renderGames();
+            showNotification('游戏已下架', 'info');
+        }
+
+        let currentChatUser = null;
+
+        function openMessagesModal() {
+            document.getElementById('messagesModal').classList.add('active');
+            renderChatUserList();
+        }
+
+        function closeMessagesModal() {
+            document.getElementById('messagesModal').classList.remove('active');
+        }
+
+        function renderChatUserList() {
+            const messages = getMessages();
+            const users = getUsers();
+            const chatUserList = document.getElementById('chatUserList');
+            
+            const userMessages = {};
+            messages.forEach(msg => {
+                const otherId = msg.from === currentUser.id ? msg.to : msg.from;
+                const otherUser = users.find(u => u.id === otherId);
+                if (otherUser) {
+                    if (!userMessages[otherId]) {
+                        userMessages[otherId] = {
+                            user: otherUser,
+                            messages: [],
+                            unread: 0
+                        };
+                    }
+                    userMessages[otherId].messages.push(msg);
+                    if (msg.to === currentUser.id && !msg.read) {
+                        userMessages[otherId].unread++;
+                    }
+                }
+            });
+            
+            const adminUser = users.find(u => u.username === 'admin');
+            if (adminUser && !userMessages[adminUser.id]) {
+                userMessages[adminUser.id] = {
+                    user: adminUser,
+                    messages: [],
+                    unread: 0
+                };
+            }
+            
+            const userList = Object.values(userMessages).sort((a, b) => {
+                const aTime = a.messages.length > 0 ? new Date(a.messages[a.messages.length - 1].time).getTime() : 0;
+                const bTime = b.messages.length > 0 ? new Date(b.messages[b.messages.length - 1].time).getTime() : 0;
+                return bTime - aTime;
+            });
+            
+            if (userList.length === 0) {
+                chatUserList.innerHTML = `<div style="text-align: center; color: #b0bec5; padding: 20px;">暂无消息</div>`;
+                return;
+            }
+            
+            chatUserList.innerHTML = userList.map(item => `
+                <div class="chat-user-item ${currentChatUser === item.user.id ? 'active' : ''}" onclick="selectChatUser('${item.user.id}')" style="padding: 12px; cursor: pointer; border-radius: 8px; margin-bottom: 5px; background: ${currentChatUser === item.user.id ? 'rgba(0, 188, 212, 0.2)' : 'transparent'}; transition: all 0.2s;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 35px; height: 35px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">👤</div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="username-scroll" style="color: #fff; font-size: 0.85rem; overflow: hidden; white-space: nowrap;" title="${item.user.username}">
+                                <span class="username-text">${item.user.username}</span>
+                            </div>
+                            <div style="color: #b0bec5; font-size: 0.7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                ${item.messages.length > 0 ? item.messages[item.messages.length - 1].content : '开始聊天'}
+                            </div>
+                        </div>
+                        ${item.unread > 0 ? `<span class="unread-badge" style="position: static; font-size: 0.65rem;">${item.unread}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectChatUser(userId) {
+            currentChatUser = userId;
+            const users = getUsers();
+            const user = users.find(u => u.id === userId);
+            
+            document.getElementById('chatWithUser').textContent = user ? `与 ${user.username} 的对话` : '选择用户';
+            document.getElementById('chatInputArea').style.display = 'block';
+            
+            renderChatMessages(userId);
+            renderChatUserList();
+            
+            const messages = getMessages();
+            messages.forEach(msg => {
+                if (msg.from === userId && msg.to === currentUser.id && !msg.read) {
+                    msg.read = true;
+                }
+            });
+            saveMessages(messages);
+            updateUnreadBadge();
+        }
+
+        function renderChatMessages(userId) {
+            const messages = getMessages();
+            const users = getUsers();
+            const chatMessages = document.getElementById('chatMessages');
+            
+            const chatMsgs = messages.filter(m => 
+                (m.from === currentUser.id && m.to === userId) || 
+                (m.from === userId && m.to === currentUser.id)
+            ).sort((a, b) => new Date(a.time) - new Date(b.time));
+            
+            if (chatMsgs.length === 0) {
+                chatMessages.innerHTML = `<div style="text-align: center; color: #b0bec5; padding: 50px;">暂无消息，发送第一条消息吧！</div>`;
+                return;
+            }
+            
+            chatMessages.innerHTML = chatMsgs.map(msg => {
+                const isMe = msg.from === currentUser.id;
+                const fromUser = users.find(u => u.id === msg.from);
+                return `
+                <div style="display: flex; justify-content: ${isMe ? 'flex-end' : 'flex-start'}; margin-bottom: 15px;">
+                    <div style="max-width: 70%; ${isMe ? 'order: 1;' : ''}">
+                        <div style="font-size: 0.75rem; color: #b0bec5; margin-bottom: 5px; ${isMe ? 'text-align: right;' : ''}">
+                            ${fromUser ? fromUser.username : '未知'} ${formatTime(msg.time)}
+                        </div>
+                        <div style="padding: 10px 15px; border-radius: 15px; background: ${isMe ? 'rgba(0, 188, 212, 0.3)' : 'rgba(255,255,255,0.1)'}; color: #fff;">
+                            ${msg.content}
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function sendChatMessage(e) {
+            e.preventDefault();
+            if (!currentChatUser) return;
+            
+            const input = document.getElementById('chatInput');
+            const content = input.value.trim();
+            if (!content) return;
+            
+            const messages = getMessages();
+            messages.push({
+                id: 'msg-' + Date.now(),
+                from: currentUser.id,
+                to: currentChatUser,
+                content: content,
+                time: new Date().toISOString(),
+                read: false
+            });
+            saveMessages(messages);
+            
+            input.value = '';
+            renderChatMessages(currentChatUser);
+            renderChatUserList();
+        }
+
+        function updateUnreadBadge() {
+            const messages = getMessages();
+            const unread = messages.filter(m => m.to === currentUser.id && !m.read).length;
+            const badge = document.getElementById('unreadBadge');
+            if (unread > 0) {
+                badge.textContent = unread > 99 ? '99+' : unread;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function renderInbox() {
+            if (!currentUser) return;
+            
+            const messages = getMessages().filter(m => m.to === currentUser.id);
+            const list = document.getElementById('inboxList');
+            
+            if (messages.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无私信</p></div>`;
+                return;
+            }
+            
+            messages.forEach(m => m.read = true);
+            saveMessages(getMessages());
+            updateUnreadCount();
+            
+            list.innerHTML = messages.reverse().map(m => `
+                <div class="message-item ${m.read ? '' : 'unread'}">
+                    <div class="message-header">
+                        <span class="message-from">来自：${m.fromName}</span>
+                        <span class="message-time">${formatTime(m.time)}</span>
+                    </div>
+                    <div class="message-text">${m.text}</div>
+                </div>
+            `).join('');
+        }
+
+        function sendMessage(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            
+            const text = document.getElementById('msgContent').value;
+            const messages = getMessages();
+            
+            messages.push({
+                id: 'msg-' + Date.now(),
+                from: currentUser.id,
+                fromName: currentUser.username,
+                to: 'admin',
+                text,
+                time: new Date().toISOString(),
+                read: false
+            });
+            
+            saveMessages(messages);
+            document.getElementById('msgContent').value = '';
+            showNotification('私信已发送给管理员', 'success');
+        }
+
+        function openAdminModal() {
+            document.getElementById('adminModal').classList.add('active');
+            renderAdminPending();
+            renderAdminUpdates();
+            renderAdminGames();
+            renderUsers();
+            renderAdminMessages();
+            renderAdminEdits();
+            renderAdminDeletes();
+            checkAutoApproveEdits();
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').classList.remove('active');
+        }
+
+        function switchAdminTab(tab) {
+            document.querySelectorAll('#adminModal .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#adminModal .tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(tab + 'Tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function checkAutoApproveEdits() {
+            const pendingEdits = JSON.parse(localStorage.getItem('pendingEdits') || '[]');
+            const now = new Date();
+            let updated = false;
+            
+            pendingEdits.forEach((edit, index) => {
+                if (edit.status === 'pending' && new Date(edit.autoApproveAt) <= now) {
+                    const aiCheck = aiContentCheck(edit);
+                    
+                    if (aiCheck.safe) {
+                        const games = getGames();
+                        const gameIndex = games.findIndex(g => g.id === edit.gameId);
+                        if (gameIndex !== -1) {
+                            games[gameIndex] = {
+                                ...games[gameIndex],
+                                name: edit.name,
+                                description: edit.description,
+                                intro: edit.intro,
+                                icon: edit.icon,
+                                tags: edit.tags,
+                                version: (games[gameIndex].version || 1) + 1,
+                                updatedAt: new Date().toISOString()
+                            };
+                            saveGames(games);
+                        }
+                        pendingEdits[index].status = 'ai_approved';
+                        pendingEdits[index].aiCheckResult = 'AI审核通过';
+                    } else {
+                        pendingEdits[index].status = 'ai_rejected';
+                        pendingEdits[index].aiCheckResult = aiCheck.reason;
+                    }
+                    updated = true;
+                }
+            });
+            
+            if (updated) {
+                localStorage.setItem('pendingEdits', JSON.stringify(pendingEdits));
+            }
+        }
+
+        function aiContentCheck(content) {
+            const sensitiveWords = [
+                '赌博', '博彩', '彩票', '六合彩', '赌场',
+                '毒品', '吸毒', '贩毒', '麻醉',
+                '暴力', '血腥', '杀人', '凶杀', '自杀',
+                '色情', '淫秽', '裸体', '性爱',
+                '恐怖', '爆炸', '袭击', '炸弹',
+                '诈骗', '传销', '非法', '违禁',
+                '政治敏感', '反动', '分裂', '颠覆',
+                '邪教', '迷信', '算命', '风水',
+                'fake', 'scam', 'fraud', 'illegal'
+            ];
+            
+            const allText = `${content.name || ''} ${content.description || ''} ${content.intro || ''} ${content.tags ? content.tags.join(' ') : ''}`.toLowerCase();
+            
+            for (const word of sensitiveWords) {
+                if (allText.includes(word.toLowerCase())) {
+                    return {
+                        safe: false,
+                        reason: `检测到敏感内容：${word}`
+                    };
+                }
+            }
+            
+            const urlPattern = /(https?:\/\/[^\s]+)/g;
+            const urls = allText.match(urlPattern) || [];
+            const suspiciousDomains = ['gambling', 'casino', 'adult', 'xxx', 'porn'];
+            for (const url of urls) {
+                for (const domain of suspiciousDomains) {
+                    if (url.toLowerCase().includes(domain)) {
+                        return {
+                            safe: false,
+                            reason: `检测到可疑链接`
+                        };
+                    }
+                }
+            }
+            
+            return { safe: true, reason: '内容安全' };
+        }
+
+        function renderAdminEdits() {
+            const pendingEdits = JSON.parse(localStorage.getItem('pendingEdits') || '[]');
+            const pending = pendingEdits.filter(e => e.status === 'pending');
+            const list = document.getElementById('adminEditsList');
+            if (!list) return;
+            
+            if (pending.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无待审核的编辑申请</p></div>`;
+                return;
+            }
+
+            list.innerHTML = pending.map(edit => {
+                const timeLeft = Math.max(0, 30 - Math.floor((Date.now() - new Date(edit.submittedAt).getTime()) / 60000));
+                return `
+                <div class="pending-card">
+                    <div class="pending-info">
+                        <h4>📝 编辑申请：${edit.name}</h4>
+                        <p>申请人：${edit.author}</p>
+                        <p>新介绍：${edit.description}</p>
+                        <p>新标签：${edit.tags.join(', ')}</p>
+                        <p style="color: #ff9800;">⏰ ${timeLeft}分钟后自动通过</p>
+                    </div>
+                    <div class="pending-actions">
+                        <button class="approve-btn" onclick="approveEdit('${edit.id}')">立即通过</button>
+                        <button class="reject-btn" onclick="rejectEdit('${edit.id}')">拒绝</button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function renderAdminDeletes() {
+            const pendingDeletes = JSON.parse(localStorage.getItem('pendingDeletes') || '[]');
+            const pending = pendingDeletes.filter(d => d.status === 'pending');
+            const list = document.getElementById('adminDeletesList');
+            if (!list) return;
+            
+            if (pending.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无待审核的下架申请</p></div>`;
+                return;
+            }
+
+            list.innerHTML = pending.map(del => `
+                <div class="pending-card">
+                    <div class="pending-info">
+                        <h4>🗑️ 下架申请：${del.gameName}</h4>
+                        <p>申请人：${del.author}</p>
+                        <p>申请时间：${new Date(del.submittedAt).toLocaleString()}</p>
+                    </div>
+                    <div class="pending-actions">
+                        <button class="approve-btn" onclick="approveDelete('${del.id}')">批准下架</button>
+                        <button class="reject-btn" onclick="rejectDelete('${del.id}')">拒绝</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function approveEdit(editId) {
+            const pendingEdits = JSON.parse(localStorage.getItem('pendingEdits') || '[]');
+            const edit = pendingEdits.find(e => e.id === editId);
+            if (!edit) return;
+            
+            const games = getGames();
+            const gameIndex = games.findIndex(g => g.id === edit.gameId);
+            if (gameIndex !== -1) {
+                games[gameIndex] = {
+                    ...games[gameIndex],
+                    name: edit.name,
+                    description: edit.description,
+                    intro: edit.intro,
+                    icon: edit.icon,
+                    tags: edit.tags,
+                    version: (games[gameIndex].version || 1) + 1,
+                    updatedAt: new Date().toISOString()
+                };
+                saveGames(games);
+            }
+            
+            edit.status = 'approved';
+            localStorage.setItem('pendingEdits', JSON.stringify(pendingEdits));
+            
+            renderAdminEdits();
+            showNotification('编辑已通过', 'success');
+        }
+
+        function rejectEdit(editId) {
+            const pendingEdits = JSON.parse(localStorage.getItem('pendingEdits') || '[]');
+            const edit = pendingEdits.find(e => e.id === editId);
+            if (edit) {
+                edit.status = 'rejected';
+                localStorage.setItem('pendingEdits', JSON.stringify(pendingEdits));
+            }
+            renderAdminEdits();
+            showNotification('编辑已拒绝', 'info');
+        }
+
+        function approveDelete(deleteId) {
+            const pendingDeletes = JSON.parse(localStorage.getItem('pendingDeletes') || '[]');
+            const del = pendingDeletes.find(d => d.id === deleteId);
+            if (!del) return;
+            
+            let games = getGames();
+            games = games.filter(g => g.id !== del.gameId);
+            saveGames(games);
+            
+            del.status = 'approved';
+            localStorage.setItem('pendingDeletes', JSON.stringify(pendingDeletes));
+            
+            renderAdminDeletes();
+            renderAdminGames();
+            showNotification('游戏已下架', 'success');
+        }
+
+        function rejectDelete(deleteId) {
+            const pendingDeletes = JSON.parse(localStorage.getItem('pendingDeletes') || '[]');
+            const del = pendingDeletes.find(d => d.id === deleteId);
+            if (del) {
+                del.status = 'rejected';
+                localStorage.setItem('pendingDeletes', JSON.stringify(pendingDeletes));
+            }
+            renderAdminDeletes();
+            showNotification('下架申请已拒绝', 'info');
+        }
+
+        function renderAdminPending() {
+            const pending = getPendingGames().filter(g => g.status === 'pending' || !g.status);
+            const list = document.getElementById('adminPendingList');
+            
+            if (pending.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无待审核的新游戏申请</p></div>`;
+                return;
+            }
+
+            list.innerHTML = pending.map(game => `
+                <div class="pending-card">
+                    <h4>${game.icon} ${game.name}</h4>
+                    <p><strong>作者：</strong>${game.author} | <strong>提交时间：</strong>${formatTime(game.submittedAt)}</p>
+                    <p><strong>描述：</strong>${game.description}</p>
+                    <p><strong>简介：</strong>${game.intro || '未填写'}</p>
+                    <p><strong>链接：</strong>${game.url}</p>
+                    <div class="pending-actions">
+                        <a href="${game.url}" target="_blank" class="play-btn" style="padding: 8px 18px; font-size: 0.85rem;">试玩游戏</a>
+                        <button class="update-btn" onclick="messageAuthor('${game.authorId}', '${game.author}')">私信作者</button>
+                        <button class="approve-btn" onclick="approveGame('${game.id}')">✓ 批准</button>
+                        <button class="reject-btn" onclick="rejectGame('${game.id}')">✗ 拒绝</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function messageAuthor(authorId, authorName) {
+            closeAdminModal();
+            openMessagesModal();
+            setTimeout(() => {
+                document.getElementById('msgToProfile').value = authorName;
+                document.getElementById('msgToIdProfile').value = authorId;
+            }, 100);
+        }
+
+        function renderAdminUpdates() {
+            const pendingUpdates = getPendingUpdates().filter(u => u.status === 'pending' || !u.status);
+            const list = document.getElementById('adminUpdatesList');
+            
+            if (pendingUpdates.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无待审核的更新申请</p></div>`;
+                return;
+            }
+
+            list.innerHTML = pendingUpdates.map(update => `
+                <div class="pending-card">
+                    <h4>${update.icon} ${update.name} <span class="update-type">更新申请</span></h4>
+                    <p><strong>申请者：</strong>${update.author} | <strong>提交时间：</strong>${formatTime(update.submittedAt)}</p>
+                    <p><strong>新描述：</strong>${update.description}</p>
+                    <p><strong>新链接：</strong>${update.url}</p>
+                    <div class="pending-actions">
+                        <button class="approve-btn" onclick="approveUpdate('${update.id}')">✓ 批准更新</button>
+                        <button class="reject-btn" onclick="rejectUpdate('${update.id}')">✗ 拒绝</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAdminGames() {
+            const games = getGames();
+            const list = document.getElementById('adminGamesList');
+            
+            if (games.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无游戏</p></div>`;
+                return;
+            }
+
+            list.innerHTML = games.map(game => `
+                <div class="upload-item">
+                    <h4>${game.icon} ${game.name} ${game.isAdminGame ? '<span class="admin-badge">官方</span>' : ''}</h4>
+                    <p><strong>作者：</strong>${game.author} | <strong>游玩次数：</strong>${game.plays || 0}</p>
+                    <p>${game.description}</p>
+                    <div class="pending-actions" style="margin-top: 10px;">
+                        <a href="${game.url}" target="_blank" class="play-btn" style="padding: 6px 15px; font-size: 0.8rem;">🎮 试玩</a>
+                        ${isAdmin ? `<button class="reject-btn" onclick="removeGame('${game.id}')" style="padding: 6px 15px; font-size: 0.8rem;">下架</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function removeAllGames() {
+            if (!confirm('⚠️ 确定要下架所有游戏吗？此操作不可恢复！')) return;
+            if (!confirm('⚠️ 再次确认：这将删除所有非官方游戏！')) return;
+            
+            const games = getGames();
+            const officialGames = games.filter(g => g.isDefault);
+            saveGames(officialGames);
+            
+            renderAdminGames();
+            renderGames();
+            showNotification('已下架所有非官方游戏', 'info');
+        }
+
+        function renderUsers() {
+            const users = getUsers();
+            const list = document.getElementById('usersList');
+            
+            list.innerHTML = users.map(u => `
+                <div class="upload-item">
+                    <h4>${u.isAdmin ? '👑' : '👤'} ${u.username}${u.isAdmin ? '<span class="admin-badge">管理员</span>' : ''}</h4>
+                    <p>${u.email} | 注册时间：${formatTime(u.createdAt)}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderAdminMessages() {
+            const messages = getMessages().filter(m => m.to === 'admin');
+            const list = document.getElementById('adminMessagesList');
+            
+            if (messages.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>暂无私信</p></div>`;
+                return;
+            }
+            
+            list.innerHTML = messages.reverse().map(m => `
+                <div class="message-item">
+                    <div class="message-header">
+                        <span class="message-from">来自：${m.fromName}</span>
+                        <span class="message-time">${formatTime(m.time)}</span>
+                    </div>
+                    <div class="message-text">${m.text}</div>
+                </div>
+            `).join('');
+        }
+
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
