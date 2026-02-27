@@ -1204,6 +1204,10 @@
         const API_URL = window.location.origin;
         
         async function fetchGamesFromServer() {
+            if (window.location.protocol === 'file:') {
+                console.log('使用本地文件协议，跳过服务器请求');
+                return null;
+            }
             try {
                 const response = await fetch(`${API_URL}/api/games`);
                 if (response.ok) {
@@ -2193,7 +2197,7 @@
                         <p class="game-author">作者：${game.author} ${followBtn}</p>
                         <p class="game-description">${game.description}</p>
                         <div class="game-tags">
-                            ${game.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                            ${(game.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
                         </div>
                         <div class="game-actions">
                             <a href="${gameUrl}" class="play-btn" target="_blank" onclick="incrementPlays('${game.id}')">▶ 开始</a>
