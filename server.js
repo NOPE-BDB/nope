@@ -443,6 +443,220 @@ app.post('/api/games/:id/play', async (req, res) => {
     }
 });
 
+// 关注API
+app.get('/api/follows', async (req, res) => {
+    try {
+        if (dbReady && pool) {
+            const result = await pool.query('SELECT * FROM follows ORDER BY createdAt DESC');
+            res.json(result.rows);
+        } else {
+            res.json(memoryDB.follows || []);
+        }
+    } catch (error) {
+        res.status(500).json({ error: '获取关注列表失败' });
+    }
+});
+
+app.post('/api/follows', authenticateToken, async (req, res) => {
+    try {
+        const { followingId, followingName } = req.body;
+        const followId = uuidv4();
+        
+        if (dbReady && pool) {
+            const existing = await pool.query(
+                'SELECT * FROM follows WHERE followerId = $1 AND followingId = $2',
+                [req.user.id, followingId]
+            );
+            if (existing.rows.length > 0) {
+                await pool.query('DELETE FROM follows WHERE followerId = $1 AND followingId = $2', [req.user.id, followingId]);
+                res.json({ success: true, action: 'unfollowed' });
+            } else {
+                await pool.query(
+                    'INSERT INTO follows (id, followerId, followerName, followingId, followingName) VALUES ($1, $2, $3, $4, $5)',
+                    [followId, req.user.id, req.user.username, followingId, followingName]
+                );
+                res.json({ success: true, action: 'followed' });
+            }
+        } else {
+            if (!memoryDB.follows) memoryDB.follows = [];
+            const existingIndex = memoryDB.follows.findIndex(
+                f => f.followerid === req.user.id && f.followingid === followingId
+            );
+            if (existingIndex > -1) {
+                memoryDB.follows.splice(existingIndex, 1);
+                res.json({ success: true, action: 'unfollowed' });
+            } else {
+                memoryDB.follows.push({
+                    id: followId,
+                    followerid: req.user.id,
+                    followername: req.user.username,
+                    followingid: followingId,
+                    followingname: followingName,
+                    createdat: new Date().toISOString()
+                });
+                res.json({ success: true, action: 'followed' });
+            }
+        }
+    } catch (error) {
+        res.status(500).json({ error: '操作失败' });
+    }
+});
+
+// 评论API
+app.get('/api/games/:id/comments', async (req, res) => {
+    try {
+        if (dbReady && pool) {
+            const result = await pool.query(
+                'SELECT * FROM comments WHERE gameId = $1 ORDER BY createdAt DESC',
+                [req.params.id]
+            );
+            res.json(result.rows);
+        } else {
+            const game = memoryDB.games.find(g => g.id === req.params.id);
+            res.json(game?.comments || []);
+        }
+    } catch (error) {
+        res.status(500).json({ error: '获取评论失败' });
+    }
+});
+
+app.post('/api/games/:id/comments', authenticateToken, async (req, res) => {
+    try {
+        const { content } = req.body;
+        const commentId = uuidv4();
+        
+        if (dbReady && pool) {
+            await pool.query(
+                'INSERT INTO comments (id, gameId, userId, username, content) VALUES ($1, $2, $3, $4, $5)',
+                [commentId, req.params.id, req.user.id, req.user.username, content]
+            );
+        } else {
+            const game = memoryDB.games.find(g => g.id === req.params.id);
+            if (game) {
+                if (!game.comments) game.comments = [];
+                game.comments.push({
+                    id: commentId,
+                    gameid: req.params.id,
+                    userid: req.user.id,
+                    username: req.user.username,
+                    content,
+                    createdat: new Date().toISOString()
+                });
+            }
+        }
+        res.json({ success: true, commentId });
+    } catch (error) {
+        res.status(500).json({ error: '评论失败' });
+    }
+});
+
+// 消息API
+app.get('/api/messages', authenticateToken, async (req, res) => {
+    try {
+        if (dbReady && pool) {
+            const result = await pool.query(
+                'SELECT * FROM messages WHERE toId = $1 OR fromId = $1 ORDER BY createdAt DESC',
+                [req.user.id]
+            );
+            res.json(result.rows);
+        } else {
+            const messages = (memoryDB.messages || []).filter(
+                m => m.toid === req.user.id || m.fromid === req.user.id
+            );
+            res.json(messages);
+        }
+    } catch (error) {
+        res.status(500).json({ error: '获取消息失败' });
+    }
+});
+
+app.post('/api/messages', authenticateToken, async (req, res) => {
+    try {
+        const { toId, toName, content } = req.body;
+        const messageId = uuidv4();
+        
+        if (dbReady && pool) {
+            await pool.query(
+                'INSERT INTO messages (id, fromId, fromName, toId, toName, content) VALUES ($1, $2, $3, $4, $5, $6)',
+                [messageId, req.user.id, req.user.username, toId, toName, content]
+            );
+        } else {
+            if (!memoryDB.messages) memoryDB.messages = [];
+            memoryDB.messages.push({
+                id: messageId,
+                fromid: req.user.id,
+                fromname: req.user.username,
+                toid: toId,
+                toname: toName,
+                content,
+                read: false,
+                createdat: new Date().toISOString()
+            });
+        }
+        res.json({ success: true, messageId });
+    } catch (error) {
+        res.status(500).json({ error: '发送失败' });
+    }
+});
+
+app.post('/api/messages/:id/read', authenticateToken, async (req, res) => {
+    try {
+        if (dbReady && pool) {
+            await pool.query('UPDATE messages SET read = true WHERE id = $1', [req.params.id]);
+        } else {
+            const msg = memoryDB.messages?.find(m => m.id === req.params.id);
+            if (msg) msg.read = true;
+        }
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: '操作失败' });
+    }
+});
+
+// 活动API
+app.get('/api/activities', authenticateToken, async (req, res) => {
+    try {
+        if (dbReady && pool) {
+            const result = await pool.query(
+                'SELECT * FROM activities WHERE userId = $1 ORDER BY createdAt DESC LIMIT 50',
+                [req.user.id]
+            );
+            res.json(result.rows);
+        } else {
+            const activities = (memoryDB.activities || []).filter(a => a.userid === req.user.id);
+            res.json(activities);
+        }
+    } catch (error) {
+        res.status(500).json({ error: '获取活动失败' });
+    }
+});
+
+app.post('/api/activities', authenticateToken, async (req, res) => {
+    try {
+        const { userId, type, content } = req.body;
+        const activityId = uuidv4();
+        
+        if (dbReady && pool) {
+            await pool.query(
+                'INSERT INTO activities (id, userId, type, content) VALUES ($1, $2, $3, $4)',
+                [activityId, userId, type, content]
+            );
+        } else {
+            if (!memoryDB.activities) memoryDB.activities = [];
+            memoryDB.activities.push({
+                id: activityId,
+                userid: userId,
+                type,
+                content,
+                createdat: new Date().toISOString()
+            });
+        }
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: '操作失败' });
+    }
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('*', (req, res) => {
