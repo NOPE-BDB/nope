@@ -2420,8 +2420,12 @@
                     : `<span class="game-icon">${game.icon}</span>`;
                 
                 const follows = getFollows();
+                console.log('renderGames - game:', game.name, 'authorId:', game.authorId, 'author:', game.author);
+                console.log('renderGames - currentUser:', currentUser?.id, currentUser?.username, 'isAdmin:', currentUser?.isAdmin);
                 const isFollowing = currentUser && follows.some(f => f.followerId === currentUser.id && f.followingId === game.authorId);
+                console.log('renderGames - isFollowing:', isFollowing);
                 const canFollow = currentUser && game.authorId !== currentUser.id && game.author !== currentUser.username && !(currentUser.isAdmin && game.isAdminGame);
+                console.log('renderGames - canFollow:', canFollow);
                 const followBtn = canFollow 
                     ? `<button class="follow-btn ${isFollowing ? 'following' : ''}" onclick="toggleFollow('${game.authorId}', event)">${isFollowing ? '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>已关注' : '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>关注'}</button>`
                     : '';
