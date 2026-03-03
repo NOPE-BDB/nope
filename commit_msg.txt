@@ -1,0 +1,1 @@
+Update admin password to nope2026 and fix isAdmin
