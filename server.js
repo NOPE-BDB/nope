@@ -172,6 +172,10 @@ async function initDatabase() {
             const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
             await client.query("INSERT INTO users (id, username, password, email, isAdmin) VALUES ('admin', 'admin', $1, 'admin@nope.com', true)", [hashedPassword]);
             console.log('✅ 管理员账户已创建');
+        } else {
+            const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
+            await client.query("UPDATE users SET password = $1 WHERE username = 'admin'", [hashedPassword]);
+            console.log('✅ 管理员密码已更新');
         }
         
         const gameExists = await client.query("SELECT * FROM games WHERE id = 'default-1'");
