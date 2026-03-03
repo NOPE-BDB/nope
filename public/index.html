@@ -530,7 +530,11 @@
                         <div class="dropdown-item logout-item" onclick="logout()">退出登录</div>
                     </div>
                 </div>
-                <button class="header-btn" onclick="handleUpload()" style="padding: 10px 16px;">📤 上传游戏</button>
+                <button class="header-btn" id="messageBtn" onclick="openMessageModal()" style="padding: 10px 14px; display: none;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </button>
             </div>
         </div>
         <h1>NOPE - 不岛币游戏</h1>
@@ -686,9 +690,22 @@
         <div class="modal-content" style="background: rgba(13, 27, 42, 0.98); border-radius: 20px; padding: 30px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3 style="color: #fff;">我的游戏</h3>
-                <span onclick="closeGameManageModal()" style="cursor: pointer; font-size: 1.5rem; color: #b0bec5;">&times;</span>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="submit-btn" onclick="openUploadFromMyGames()" style="padding: 8px 16px; font-size: 0.85rem; width: auto;">📤 上传游戏</button>
+                    <span onclick="closeGameManageModal()" style="cursor: pointer; font-size: 1.5rem; color: #b0bec5;">&times;</span>
+                </div>
             </div>
             <div id="gameManageContent"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="messageModal">
+        <div class="modal-content" style="background: rgba(13, 27, 42, 0.98); border-radius: 20px; padding: 30px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="color: #fff;">我的消息</h3>
+                <span onclick="closeMessageModal()" style="cursor: pointer; font-size: 1.5rem; color: #b0bec5;">&times;</span>
+            </div>
+            <div id="messageList"></div>
         </div>
     </div>
 
@@ -701,6 +718,7 @@
         let comments = {};
         let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
         let currentGameId = null;
+        let messages = [];
 
         async function init() {
             console.log('init - 开始执行');
@@ -847,6 +865,7 @@
             document.getElementById('authButtons').style.display = 'none';
             document.getElementById('userArea').style.display = 'flex';
             document.getElementById('displayUsername').textContent = currentUser.username;
+            document.getElementById('messageBtn').style.display = 'block';
             
             const adminModeBtn = document.getElementById('adminModeBtn');
             if (currentUser.isAdmin) {
@@ -859,6 +878,7 @@
         function updateUIForLoggedOut() {
             document.getElementById('authButtons').style.display = 'flex';
             document.getElementById('userArea').style.display = 'none';
+            document.getElementById('messageBtn').style.display = 'none';
         }
 
         function toggleUserMenu() {
@@ -1298,6 +1318,59 @@
 
         function closeGameManageModal() {
             document.getElementById('gameManageModal').classList.remove('active');
+        }
+
+        function openUploadFromMyGames() {
+            closeGameManageModal();
+            document.getElementById('uploadModal').classList.add('active');
+            document.getElementById('uploadModalTitle').textContent = '📤 上传新游戏';
+            document.getElementById('uploadForm').reset();
+        }
+
+        async function fetchMessages() {
+            if (!currentUser || !token) return;
+            try {
+                const response = await fetch(`${API_URL}/api/messages`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    messages = await response.json();
+                }
+            } catch (error) {
+                console.error('获取消息失败:', error);
+            }
+        }
+
+        async function openMessageModal() {
+            if (!currentUser) {
+                showNotification('请先登录', 'error');
+                openAuthModal('login');
+                return;
+            }
+            await fetchMessages();
+            renderMessages();
+            document.getElementById('messageModal').classList.add('active');
+        }
+
+        function closeMessageModal() {
+            document.getElementById('messageModal').classList.remove('active');
+        }
+
+        function renderMessages() {
+            const list = document.getElementById('messageList');
+            if (messages.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>暂无消息</p></div>';
+                return;
+            }
+            list.innerHTML = messages.map(m => `
+                <div class="comment-item">
+                    <div class="comment-header">
+                        <span class="comment-author">${m.fromname || m.fromName}</span>
+                        <span class="comment-time">${formatTime(m.createdat || m.createdAt)}</span>
+                    </div>
+                    <div class="comment-text">${m.content}</div>
+                </div>
+            `).join('');
         }
 
         function openAdminModal() {
