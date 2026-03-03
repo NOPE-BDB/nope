@@ -449,12 +449,11 @@ app.post('/api/games', authenticateToken, async (req, res) => {
         
         const gameId = uuidv4();
         const status = req.user.isAdmin ? 'approved' : 'pending';
-        const icon = req.body.cover ? '🎮' : '🎮';
         
         if (dbReady && pool) {
             await pool.query(
                 'INSERT INTO games (id, name, description, intro, url, icon, cover, tags, author, authorId, isAdminGame, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
-                [gameId, name, description || '', intro || '', url, icon, req.body.cover || '', tags || '游戏', req.user.username, req.user.id, req.user.isAdmin, status]
+                [gameId, name, description || '', intro || '', url, '🎮', req.body.cover || '', tags || '游戏', req.user.username, req.user.id, req.user.isAdmin, status]
             );
         } else {
             memoryDB.games.push({
@@ -463,7 +462,7 @@ app.post('/api/games', authenticateToken, async (req, res) => {
                 description: description || '',
                 intro: intro || '',
                 url,
-                icon: icon,
+                icon: '🎮',
                 cover: req.body.cover || '',
                 tags: tags || '游戏',
                 author: req.user.username,
